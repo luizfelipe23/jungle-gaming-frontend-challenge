@@ -116,7 +116,7 @@ describe('Catálogo', () => {
     expect(screen.getByText('An emberborn masterpiece with volcanic reflections and a rare forged edge.')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Características' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Adicionar ao carrinho' }))
-    expect(screen.getByRole('button', { name: 'Adicionado ao carrinho' })).toBeInTheDocument()
+    expect(await screen.findByText('1 unidade(s) adicionada(s) ao carrinho.')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Abrir carrinho, 1 item' })).toBeInTheDocument()
   })
 

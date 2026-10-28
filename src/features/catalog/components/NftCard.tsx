@@ -4,6 +4,7 @@ import { Link } from '@tanstack/react-router'
 
 import { Card } from '../../../components/ui/card'
 import type { Nft } from '../../../types/nft'
+import { formatDecimal } from '../../../lib/money'
 
 const statusLabels: Record<Nft['status'], string> = {
   available: 'Disponível',
@@ -56,7 +57,7 @@ export function NftCard({ nft }: NftCardProps) {
             <div>
               <p className="text-[9px] uppercase tracking-[0.16em] text-[#B39483]">Preço atual</p>
               <p className="mt-1 text-sm font-bold text-[#E89B55] sm:text-base">
-                {nft.price.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} <span className="text-[10px] text-[#CFB28C]">{nft.currency}</span>
+                {formatDecimal(nft.price, nft.currency === 'ETH' ? 8 : 2)} <span className="text-[10px] text-[#CFB28C]">{nft.currency}</span>
               </p>
             </div>
             <span aria-hidden="true" className="mb-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#55321F] text-[#E89B55] transition group-hover:bg-[#D28A4C] group-hover:text-[#140D0A]">

@@ -1,4 +1,5 @@
 import type { Nft } from '../../../types/nft'
+import { compareDecimals } from '../../../lib/money'
 
 export type CatalogSort = 'newest' | 'price-asc' | 'price-desc' | 'name'
 export type CatalogStatus = Nft['status'] | 'all'
@@ -56,17 +57,17 @@ export function filterAndSortNfts(nfts: Nft[], search: CatalogSearch): Nft[] {
     const matchesCollection = !search.collection || nft.collection === search.collection
     const matchesRarity = !search.rarity || nft.rarity === search.rarity
     const matchesCurrency = !search.currency || search.currency === 'all' || nft.currency === search.currency
-    const matchesMinPrice = search.minPrice === undefined || nft.price >= search.minPrice
-    const matchesMaxPrice = search.maxPrice === undefined || nft.price <= search.maxPrice
+    const matchesMinPrice = search.minPrice === undefined || compareDecimals(nft.price, String(search.minPrice)) >= 0
+    const matchesMaxPrice = search.maxPrice === undefined || compareDecimals(nft.price, String(search.maxPrice)) <= 0
 
     return matchesQuery && matchesStatus && matchesCollection && matchesRarity && matchesCurrency && matchesMinPrice && matchesMaxPrice
   })
 
   switch (search.sort ?? 'newest') {
     case 'price-asc':
-      return result.sort((a, b) => a.price - b.price)
+      return result.sort((a, b) => compareDecimals(a.price, b.price))
     case 'price-desc':
-      return result.sort((a, b) => b.price - a.price)
+      return result.sort((a, b) => compareDecimals(b.price, a.price))
     case 'name':
       return result.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
     case 'newest':

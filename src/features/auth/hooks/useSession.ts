@@ -11,17 +11,23 @@ import { realtimeClient } from '../../../lib/realtime/socket-client'
 
 export const sessionQueryKey = ['auth', 'session'] as const
 
+function isPreviousUserData(queryKey: readonly unknown[]) {
+  return queryKey[0] === 'private'
+    || (queryKey[0] === 'cart' && queryKey[1] !== 'guest')
+    || (queryKey[0] === 'cartQuote' && queryKey[1] !== 'guest')
+}
+
 export function clearPrivateSession(queryClient: ReturnType<typeof useQueryClient>) {
   clearSessionToken()
   queryClient.setQueryData(sessionQueryKey, null)
-  void queryClient.cancelQueries({ predicate: (query) => query.queryKey[0] === 'private' })
-  queryClient.removeQueries({ predicate: (query) => query.queryKey[0] === 'private' })
+  void queryClient.cancelQueries({ predicate: (query) => isPreviousUserData(query.queryKey) })
+  queryClient.removeQueries({ predicate: (query) => isPreviousUserData(query.queryKey) })
   realtimeClient.disconnect()
 }
 
 export function clearPrivateUserData(queryClient: ReturnType<typeof useQueryClient>) {
-  void queryClient.cancelQueries({ predicate: (query) => query.queryKey[0] === 'private' })
-  queryClient.removeQueries({ predicate: (query) => query.queryKey[0] === 'private' })
+  void queryClient.cancelQueries({ predicate: (query) => isPreviousUserData(query.queryKey) })
+  queryClient.removeQueries({ predicate: (query) => isPreviousUserData(query.queryKey) })
   window.dispatchEvent(new Event(sessionExpiredEvent + ':restored'))
 }
 
@@ -34,8 +40,8 @@ export function sessionQueryOptions(queryClient: ReturnType<typeof useQueryClien
       } catch (error) {
         if (isAxiosError(error) && error.response?.status === 401) {
           clearSessionToken()
-          void queryClient.cancelQueries({ predicate: (query) => query.queryKey[0] === 'private' })
-          queryClient.removeQueries({ predicate: (query) => query.queryKey[0] === 'private' })
+          void queryClient.cancelQueries({ predicate: (query) => isPreviousUserData(query.queryKey) })
+          queryClient.removeQueries({ predicate: (query) => isPreviousUserData(query.queryKey) })
           realtimeClient.disconnect()
           return null
         }

@@ -6,7 +6,7 @@ export class SocketClient {
   private socket: Socket | null = null
 
   connect(url = import.meta.env.VITE_SOCKET_URL ?? 'http://localhost:3001') {
-    if (this.socket?.connected) {
+    if (this.socket) {
       return this.socket
     }
 
@@ -14,6 +14,7 @@ export class SocketClient {
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 5,
+      transports: ['websocket'],
     })
 
     return this.socket
@@ -25,7 +26,9 @@ export class SocketClient {
   }
 
   onEvent<TPayload>(eventName: 'nft.updated' | 'order.updated', handler: (event: RealtimeUpdateEvent<TPayload>) => void) {
-    this.socket?.on(eventName, handler)
+    if (!this.socket) return () => undefined
+    this.socket.on(eventName, handler)
+    return () => this.socket?.off(eventName, handler)
   }
 }
 

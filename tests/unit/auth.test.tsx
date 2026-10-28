@@ -144,7 +144,9 @@ describe('Autenticação e sessão', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível validar sua sessão anterior.')
     expect(router.state.location.pathname).toBe('/login')
     expect(window.localStorage.getItem(sessionTokenStorageKey)).toBeNull()
-    expect(window.localStorage.getItem(guestCartKey)).toBe(cartValue)
+    const savedCart = JSON.parse(window.localStorage.getItem(guestCartKey) ?? '{}') as { schemaVersion: number; items: Array<{ nftId: string; quantity: number }> }
+    expect(savedCart.schemaVersion).toBe(2)
+    expect(savedCart.items).toContainEqual(expect.objectContaining({ nftId: 'nft-001', quantity: 1 }))
   })
 
   it('redireciona para uma rota pública diante de erro de comunicação na sessão', async () => {

@@ -4,7 +4,7 @@
 
 O serviço `e2e` do `compose.yaml` usa `mcr.microsoft.com/playwright:v1.64.1-jammy`, correspondente a `@playwright/test` `1.64.1` no `package-lock.json`. Ele monta o código-fonte e um volume `e2e_node_modules` próprio, executa `npm ci` e inicia `npm run test:e2e`.
 
-O `playwright.config.ts` configura o projeto Chromium e declara o Vite em `webServer`. O Playwright espera `http://127.0.0.1:5173` responder antes dos testes e encerra o processo Vite depois deles. O servidor fica dentro do container E2E, então não depende do app de desenvolvimento nem da porta publicada no Windows.
+O `playwright.config.ts` configura o projeto Chromium e declara `npm run dev:e2e` em `webServer`. Esse comando inicia o Vite e um servidor Socket.IO local usado pelo teste de atualização de preço/estoque. O Playwright espera `http://127.0.0.1:5173` responder antes dos testes e encerra os dois processos depois deles. Os servidores ficam dentro do container E2E, então não dependem do app de desenvolvimento nem da porta publicada no Windows.
 
 ## Executar
 

@@ -141,6 +141,86 @@ test('expires the session during checkout and preserves the guest cart', async (
   await expect.poll(() => page.evaluate(() => localStorage.getItem('frontend-challenge:cart:guest:v1'))).toContain('nft-001')
 })
 
+test('edits quantity, applies a coupon, refreshes and keeps the API quote in sync', async ({ page }) => {
+  await page.goto('/nft/nft-001')
+  await page.getByLabel('Quantidade do NFT').fill('2')
+  await page.getByRole('button', { name: 'Adicionar ao carrinho' }).click()
+  await page.getByRole('link', { name: 'Abrir carrinho, 2 itens' }).click()
+  await expect(page.getByRole('status', { name: 'Quantidade de Crimson Ember' })).toHaveText('2')
+  await page.getByRole('button', { name: 'Aumentar quantidade de Crimson Ember' }).click()
+  await expect(page.getByRole('status', { name: 'Quantidade de Crimson Ember' })).toHaveText('3')
+
+  await page.getByLabel('Cupom de desconto').fill('KURIO10')
+  await page.getByRole('button', { name: 'Aplicar' }).click()
+  await expect(page.getByText('Cupom KURIO10 aplicado (10% de desconto).')).toBeVisible()
+  await expect(page.getByText('0,555 ETH')).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('status', { name: 'Quantidade de Crimson Ember' })).toHaveText('3')
+  await expect(page.getByText('Cupom KURIO10 aplicado (10% de desconto).')).toBeVisible()
+  await expect(page.getByText('5 ETH', { exact: true })).toBeVisible()
+})
+
+test('merges the visitor cart on login and isolates carts between accounts', async ({ page }) => {
+  await page.goto('/nft/nft-001')
+  await page.getByLabel('Quantidade do NFT').fill('2')
+  await page.getByRole('button', { name: 'Adicionar ao carrinho' }).click()
+  await page.getByRole('link', { name: 'Entrar' }).click()
+  await page.getByLabel('E-mail').fill('luna@demo.kurio')
+  await page.getByLabel('Senha').fill('Luna@Kurio2026!')
+  await page.getByRole('button', { name: 'Entrar' }).click()
+  await expect(page.getByRole('link', { name: 'Luna Alves' })).toBeVisible()
+  await page.getByRole('link', { name: 'Abrir carrinho, 2 itens' }).click()
+  await expect(page.getByRole('status', { name: 'Quantidade de Crimson Ember' })).toHaveText('2')
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('frontend-challenge:cart:guest:v1'))).toBeNull()
+
+  await page.getByRole('button', { name: 'Sair' }).first().click()
+  await expect(page.getByRole('link', { name: 'Entrar' })).toBeVisible()
+  await page.getByRole('link', { name: 'Entrar' }).first().click()
+  await page.getByLabel('E-mail').fill('rafael@demo.kurio')
+  await page.getByLabel('Senha').fill('Rafael@Kurio2026!')
+  await page.getByRole('button', { name: 'Entrar' }).click()
+  await expect(page.getByRole('link', { name: 'Rafael Costa' })).toBeVisible()
+  await page.getByRole('link', { name: 'Abrir carrinho' }).click()
+  await expect(page.getByRole('heading', { name: 'Seu carrinho está vazio' })).toBeVisible()
+})
+
+test('requotes changed price and blocks an edition after a Socket.IO inventory update', async ({ page }) => {
+  await page.goto('/nft/nft-001')
+  await page.getByRole('button', { name: 'Adicionar ao carrinho' }).click()
+  await page.getByRole('link', { name: 'Abrir carrinho, 1 item' }).click()
+  await expect(page.getByText('1,855 ETH')).toBeVisible()
+
+  await expect.poll(async () => {
+    const response = await page.request.get('http://127.0.0.1:3001/__test__/realtime-status')
+    return (await response.json() as { connectedClients: number }).connectedClients
+  }).toBeGreaterThan(0)
+
+  const priceUpdate = await page.evaluate(async () => {
+    const response = await fetch('/api/dev/scenarios/nft-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nftId: 'nft-001', price: '2.25', status: 'available', availableQuantity: 4, editionId: 'standard', editionPrice: '2.25' }),
+    })
+    return (await response.json() as { event: unknown }).event
+  })
+  await page.request.post('http://127.0.0.1:3001/__test__/emit', { data: { event: priceUpdate } })
+  await expect(page.getByRole('status').filter({ hasText: 'O preço ou a disponibilidade' })).toBeVisible()
+  await expect(page.getByText('2,25 ETH', { exact: true }).first()).toBeVisible()
+  await expect(page.getByText('2,255 ETH', { exact: true })).toBeVisible()
+
+  const stockUpdate = await page.evaluate(async () => {
+    const response = await fetch('/api/dev/scenarios/nft-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nftId: 'nft-001', status: 'reserved', availableQuantity: 0, editionId: 'standard', editionAvailableQuantity: 0 }),
+    })
+    return (await response.json() as { event: unknown }).event
+  })
+  await page.request.post('http://127.0.0.1:3001/__test__/emit', { data: { event: stockUpdate } })
+  await expect(page.getByText('Indisponível no momento')).toBeVisible()
+  await expect(page.getByRole('link', { name: /prosseguir ao checkout/i })).toHaveAttribute('aria-disabled', 'true')
+})
+
 test('keeps search, filters, cards, and bottom navigation usable on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')

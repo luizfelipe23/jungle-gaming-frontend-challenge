@@ -4,7 +4,7 @@ import { useCart } from '../../features/cart/useCart'
 import { useSession } from '../../features/auth/hooks/useSession'
 
 export function Header() {
-  const { itemIds } = useCart()
+  const { itemCount } = useCart()
   const { user, isLoading: sessionLoading, logout, isLoggingOut } = useSession()
   return (
     <header className="sticky top-0 z-40 border-b border-[#D28A4C]/30 bg-[#140D0A]/95 backdrop-blur-md">
@@ -24,9 +24,9 @@ export function Header() {
           <a href="#catalog-search" aria-label="Buscar NFTs" className="inline-flex h-10 w-10 items-center justify-center rounded-md text-[#F5F1EB] transition hover:bg-[#241612] hover:text-[#E89B55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E89B55]">
             <Search aria-hidden="true" className="h-5 w-5" />
           </a>
-          <Link to="/cart" aria-label={`Abrir carrinho${itemIds.length ? `, ${itemIds.length} ${itemIds.length === 1 ? 'item' : 'itens'}` : ''}`} className="relative inline-flex h-10 w-10 items-center justify-center rounded-md text-[#F5F1EB] transition hover:bg-[#241612] hover:text-[#E89B55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E89B55]">
+          <Link to="/cart" aria-label={`Abrir carrinho${itemCount ? `, ${itemCount} ${itemCount === 1 ? 'item' : 'itens'}` : ''}`} className="relative inline-flex h-10 w-10 items-center justify-center rounded-md text-[#F5F1EB] transition hover:bg-[#241612] hover:text-[#E89B55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E89B55]">
             <ShoppingBag aria-hidden="true" className="h-5 w-5" />
-            {itemIds.length > 0 && <span aria-hidden="true" className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D28A4C] px-1 text-[9px] font-bold text-[#140D0A]">{itemIds.length}</span>}
+            {itemCount > 0 && <span aria-hidden="true" className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D28A4C] px-1 text-[9px] font-bold text-[#140D0A]">{itemCount}</span>}
           </Link>
           {sessionLoading ? <span aria-label="Verificando sessão" className="hidden h-8 w-16 animate-pulse rounded bg-[#241612] sm:block" /> : user ? <div className="hidden items-center gap-3 sm:flex">
             <Link to="/profile" className="max-w-28 truncate text-xs text-[#CFB28C] hover:text-[#E89B55]">{user.name}</Link>

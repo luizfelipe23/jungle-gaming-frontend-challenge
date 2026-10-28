@@ -2,6 +2,7 @@ import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
 import { useState } from 'react'
 
 import type { Nft } from '../../../types/nft'
+import { formatDecimal } from '../../../lib/money'
 
 type CatalogHeroProps = { featuredNft?: Nft }
 
@@ -57,7 +58,7 @@ export function CatalogHero({ featuredNft }: CatalogHeroProps) {
             </div>
             {featuredNft && (
               <span className="shrink-0 text-sm font-semibold text-[#E89B55]">
-                {featuredNft.price.toLocaleString('pt-BR')} {featuredNft.currency}
+                {formatDecimal(featuredNft.price, featuredNft.currency === 'ETH' ? 8 : 2)} {featuredNft.currency}
               </span>
             )}
           </div>

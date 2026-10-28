@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
+    "dev:e2e": "node scripts/e2e-server.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint . --ext ts,tsx --max-warnings 0",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
@@ -14,7 +15,6 @@
     "test:e2e:docker": "docker compose run --rm e2e"
   },
   "dependencies": {
-    "@mswjs/socket.io-binding": "^0.2.0",
     "@tanstack/react-query": "^5.105.0",
     "@tanstack/react-router": "^1.170.46",
     "axios": "^1.12.2",
@@ -43,6 +43,7 @@
     "globals": "^17.13.0",
     "jsdom": "^27.0.0",
     "playwright": "^1.64.1",
+    "socket.io": "^4.8.4",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.72.1",

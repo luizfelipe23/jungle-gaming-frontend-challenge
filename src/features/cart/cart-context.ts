@@ -1,23 +1,35 @@
 import { createContext } from 'react'
 
 import type { Nft } from '../../types/nft'
+import type { CartLine, CartLineInput, CartQuote, CartQuoteItem, CartState } from './types/cart'
+
+export type CartCacheKey = readonly ['cart', string]
 
 export interface CartContextValue {
   itemIds: string[]
+  itemCount: number
   items: CartEntry[]
-  totalByCurrency: Record<Nft['currency'], number>
+  cart?: CartState
+  quote?: CartQuote
   isLoading: boolean
+  isQuoteLoading: boolean
+  isSaving: boolean
   hasErrors: boolean
-  addItem: (nft: Nft) => void
-  removeItem: (id: string) => void
-  clearCart: () => void
+  errorMessage: string | null
+  notice: string | null
+  addItem: (item: CartLineInput) => Promise<void>
+  updateQuantity: (itemId: string, quantity: number) => Promise<void>
+  removeItem: (itemId: string) => Promise<void>
+  clearCart: () => Promise<void>
+  applyCoupon: (code: string) => Promise<void>
+  removeCoupon: () => Promise<void>
+  refreshQuote: () => Promise<void>
+  dismissNotice: () => void
 }
 
-export interface CartEntry {
-  id: string
+export interface CartEntry extends CartLine {
   nft?: Nft
-  isLoading: boolean
-  hasError: boolean
+  quoteItem?: CartQuoteItem
 }
 
 export const CartContext = createContext<CartContextValue | null>(null)

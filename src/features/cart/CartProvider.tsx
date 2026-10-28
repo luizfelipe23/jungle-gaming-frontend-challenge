@@ -1,58 +1,207 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useQueries, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useMutation, useQueries, useQuery, useQueryClient, type UseMutationOptions } from '@tanstack/react-query'
+import { isAxiosError } from 'axios'
 
-import { CartContext, type CartContextValue } from './cart-context'
+import { realtimeClient } from '../../lib/realtime/socket-client'
 import { getNftById } from '../catalog/api/nftApi'
-import { readCartIds, writeCartIds } from './cart-storage'
+import type { RealtimeUpdateEvent } from '../../lib/realtime/types'
 import type { Nft } from '../../types/nft'
+import { useSession } from '../auth/hooks/useSession'
+import { CartContext, type CartCacheKey, type CartContextValue } from './cart-context'
+import { addCartItem, applyCartCoupon, clearCartRequest, getCart, mergeGuestCart, quoteCart, removeCartCoupon, removeCartItem, updateCartItem } from './api/cartApi'
+import { clearGuestCart, readGuestCart } from './cart-storage'
+import type { CartApiError, CartLineInput, CartQuote, CartState } from './types/cart'
+
+function getErrorMessage(error: unknown) {
+  if (isAxiosError<CartApiError>(error)) return error.response?.data.message ?? 'Não foi possível atualizar o carrinho. Tente novamente.'
+  return 'Não foi possível atualizar o carrinho. Verifique sua conexão e tente novamente.'
+}
+
+function optimisticCartMutationOptions<TVariables>(
+  queryClient: ReturnType<typeof useQueryClient>,
+  cartKey: CartCacheKey,
+  update: (cart: CartState, variables: TVariables) => CartState,
+  setError: (message: string | null) => void,
+): UseMutationOptions<CartState, unknown, TVariables, CartState | undefined> {
+  return {
+    onMutate: async (variables) => {
+      setError(null)
+      await queryClient.cancelQueries({ queryKey: cartKey })
+      const previous = queryClient.getQueryData<CartState>(cartKey)
+      if (previous) queryClient.setQueryData(cartKey, update(previous, variables))
+      return previous
+    },
+    onError: (error, _variables, previous) => {
+      if (previous) queryClient.setQueryData(cartKey, previous)
+      setError(getErrorMessage(error))
+    },
+    onSuccess: (cart) => {
+      setError(null)
+      queryClient.setQueryData(cartKey, cart)
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['cartQuote', cartKey[1]] })
+    },
+  }
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [itemIds, setItemIds] = useState(readCartIds)
   const queryClient = useQueryClient()
-  const itemQueries = useQueries({
-    queries: itemIds.map((id) => ({
-      queryKey: ['nft', id],
-      queryFn: () => getNftById(id),
-      initialData: () => queryClient.getQueryData<Nft[]>(['nfts'])?.find((nft) => nft.id === id),
-      initialDataUpdatedAt: () => queryClient.getQueryState(['nfts'])?.dataUpdatedAt,
+  const session = useSession()
+  const ownerKey = session.user ? `user:${session.user.id}` : 'guest'
+  const cartKey: CartCacheKey = ['cart', ownerKey]
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const mergingRef = useRef(new Set<string>())
+  const lastVersionsRef = useRef(new Map<string, number>())
+  const cartQuery = useQuery({
+    queryKey: cartKey,
+    queryFn: getCart,
+    enabled: !session.isLoading,
+    retry: false,
+  })
+  const cart = cartQuery.data ?? { items: [], couponCode: null, version: 0 }
+  const nftIds = useMemo(() => [...new Set(cart.items.map((line) => line.nftId))], [cart.items])
+  const nftQueries = useQueries({
+    queries: nftIds.map((nftId) => ({
+      queryKey: ['nft', nftId],
+      queryFn: () => getNftById(nftId),
     })),
   })
+  const quoteQuery = useQuery<CartQuote>({
+    queryKey: ['cartQuote', ownerKey, cart.version] as const,
+    queryFn: quoteCart,
+    enabled: !session.isLoading && !cartQuery.isError && cart.items.length > 0,
+    retry: false,
+  })
+  const quote = quoteQuery.data
 
-  useEffect(() => writeCartIds(itemIds), [itemIds])
+  useEffect(() => {
+    if (!quote) return
+    const delay = Math.max(0, Date.parse(quote.expiresAt) - Date.now())
+    const timer = window.setTimeout(() => {
+      void queryClient.invalidateQueries({ queryKey: ['cartQuote', ownerKey] })
+    }, delay)
+    return () => window.clearTimeout(timer)
+  }, [ownerKey, queryClient, quote])
 
-  const addItem = useCallback((nft: Nft) => {
-    queryClient.setQueryData(['nft', nft.id], nft)
-    setItemIds((current) => current.includes(nft.id) ? current : [...current, nft.id])
-  }, [queryClient])
+  const addMutation = useMutation({
+    mutationFn: (item: CartLineInput) => addCartItem(item),
+    ...optimisticCartMutationOptions(queryClient, cartKey, (current, item) => {
+      const existing = current.items.find((line) => line.nftId === item.nftId && line.editionId === item.editionId)
+      const items = existing
+        ? current.items.map((line) => line.itemId === existing.itemId ? { ...line, quantity: line.quantity + item.quantity } : line)
+        : [...current.items, { ...item, itemId: `${encodeURIComponent(item.nftId)}::${encodeURIComponent(item.editionId ?? 'default')}` }]
+      return { ...current, items, version: current.version + 1 }
+    }, setErrorMessage),
+  })
+  const quantityMutation = useMutation({
+    mutationFn: ({ itemId, quantity }: { itemId: string; quantity: number }) => updateCartItem(itemId, quantity),
+    ...optimisticCartMutationOptions(queryClient, cartKey, (current, { itemId, quantity }) => ({
+      ...current, version: current.version + 1,
+      items: current.items.map((line) => line.itemId === itemId ? { ...line, quantity } : line),
+    }), setErrorMessage),
+  })
+  const removeMutation = useMutation({
+    mutationFn: (itemId: string) => removeCartItem(itemId),
+    ...optimisticCartMutationOptions(queryClient, cartKey, (current, itemId) => ({
+      ...current, version: current.version + 1, items: current.items.filter((line) => line.itemId !== itemId),
+    }), setErrorMessage),
+  })
+  const clearMutation = useMutation({
+    mutationFn: clearCartRequest,
+    ...optimisticCartMutationOptions(queryClient, cartKey, (current) => ({ ...current, items: [], couponCode: null, version: current.version + 1 }), setErrorMessage),
+  })
+  const applyCouponMutation = useMutation<CartState, unknown, string, CartState | undefined>({
+    mutationFn: applyCartCoupon,
+    ...optimisticCartMutationOptions(queryClient, cartKey, (current, code) => ({ ...current, couponCode: code.trim().toUpperCase(), version: current.version + 1 }), setErrorMessage),
+  })
+  const removeCouponMutation = useMutation({
+    mutationFn: removeCartCoupon,
+    ...optimisticCartMutationOptions(queryClient, cartKey, (current) => ({ ...current, couponCode: null, version: current.version + 1 }), setErrorMessage),
+  })
 
-  const removeItem = useCallback((id: string) => {
-    setItemIds((current) => current.filter((itemId) => itemId !== id))
-  }, [])
+  useEffect(() => {
+    if (session.isLoading || !session.user) return
+    const guestCart = readGuestCart()
+    if (!guestCart.items.length) return
+    const mergeId = `${session.user.id}:${guestCart.version}:${guestCart.items.map((line) => `${line.nftId}:${line.editionId ?? ''}:${line.quantity}`).join('|')}`
+    if (mergingRef.current.has(mergeId)) return
+    mergingRef.current.add(mergeId)
+    void mergeGuestCart(guestCart.items.map(({ nftId, editionId, quantity }) => ({ nftId, editionId, quantity })), mergeId)
+      .then((result) => {
+        clearGuestCart()
+        queryClient.setQueryData<CartState>(['cart', `user:${session.user!.id}`], result.cart)
+        queryClient.setQueryData<CartState>(['cart', 'guest'], { items: [], couponCode: null, version: guestCart.version + 1 })
+        if (result.issues.length) {
+          const unavailable = result.issues.filter((issue) => issue.reason === 'unavailable').length
+          const limited = result.issues.filter((issue) => issue.reason === 'quantity').length
+          setNotice(`Carrinho mesclado com ajustes: ${unavailable} item(ns) indisponível(is) e ${limited} quantidade(s) limitada(s).`)
+        } else setNotice('Os itens do seu carrinho de visitante foram mesclados à sua conta.')
+      })
+      .catch(() => {
+        mergingRef.current.delete(mergeId)
+        setErrorMessage('Não foi possível mesclar o carrinho agora. Os itens de visitante continuam salvos neste navegador.')
+      })
+  }, [queryClient, session.isLoading, session.user])
 
-  const clearCart = useCallback(() => setItemIds([]), [])
+  useEffect(() => {
+    if (!cart.items.length || import.meta.env.MODE === 'test') return
+    realtimeClient.connect()
+    const unsubscribe = realtimeClient.onEvent<{ price: string; status: Nft['status']; availableQuantity: number }>('nft.updated', (event: RealtimeUpdateEvent<{ price: string; status: Nft['status']; availableQuantity: number }>) => {
+      const previousVersion = lastVersionsRef.current.get(event.resourceId) ?? 0
+      if (event.version <= previousVersion) return
+      lastVersionsRef.current.set(event.resourceId, event.version)
+      if (!cartQuery.data?.items.some((item) => item.nftId === event.resourceId)) return
+      setNotice('O preço ou a disponibilidade de um NFT mudou. A cotação está sendo atualizada.')
+      queryClient.invalidateQueries({ queryKey: ['nft', event.resourceId] })
+      queryClient.invalidateQueries({ queryKey: ['nfts'] })
+      queryClient.invalidateQueries({ queryKey: ['cartQuote', ownerKey] })
+    })
+    return () => {
+      unsubscribe()
+      realtimeClient.disconnect()
+    }
+  }, [cart.items.length, cartQuery.data, ownerKey, queryClient])
 
-  const items = useMemo(() => itemIds.map((id, index) => ({
-    id,
-    nft: itemQueries[index]?.data,
-    isLoading: itemQueries[index]?.isLoading ?? false,
-    hasError: itemQueries[index]?.isError ?? false,
-  })), [itemIds, itemQueries])
+  const addItem = useCallback(async (item: CartLineInput) => { await addMutation.mutateAsync(item) }, [addMutation])
+  const updateQuantity = useCallback(async (itemId: string, quantity: number) => { try { await quantityMutation.mutateAsync({ itemId, quantity }) } catch { /* Reported through context errorMessage. */ } }, [quantityMutation])
+  const removeItem = useCallback(async (itemId: string) => { try { await removeMutation.mutateAsync(itemId) } catch { /* Reported through context errorMessage. */ } }, [removeMutation])
+  const clearCart = useCallback(async () => { try { await clearMutation.mutateAsync() } catch { /* Reported through context errorMessage. */ } }, [clearMutation])
+  const applyCoupon = useCallback(async (code: string) => { try { await applyCouponMutation.mutateAsync(code) } catch { /* Reported through context errorMessage. */ } }, [applyCouponMutation])
+  const removeCoupon = useCallback(async () => { try { await removeCouponMutation.mutateAsync() } catch { /* Reported through context errorMessage. */ } }, [removeCouponMutation])
+  const refreshQuote = useCallback(async () => { await quoteQuery.refetch() }, [quoteQuery])
 
-  const totalByCurrency = useMemo(() => items.reduce((totals, item) => {
-    if (item.nft) totals[item.nft.currency] += item.nft.price
-    return totals
-  }, { ETH: 0, USD: 0 }), [items])
-
-  const value = useMemo<CartContextValue>(() => ({
-    itemIds,
+  const quoteByLine = useMemo(() => new Map(quote?.items.map((item) => [item.itemId, item]) ?? []), [quote])
+  const nftsById = useMemo(() => new Map(nftIds.map((nftId, index) => [nftId, nftQueries[index]?.data])), [nftIds, nftQueries])
+  const items = useMemo(() => cart.items.map((line) => {
+    const quoteItem = quoteByLine.get(line.itemId)
+    const nft = quoteItem?.nft ?? nftsById.get(line.nftId)
+    return { ...line, ...(nft ? { nft } : {}), ...(quoteItem ? { quoteItem } : {}) }
+  }), [cart.items, nftsById, quoteByLine])
+  const itemCount = cart.items.reduce((count, item) => count + item.quantity, 0)
+  const isSaving = addMutation.isPending || quantityMutation.isPending || removeMutation.isPending || clearMutation.isPending || applyCouponMutation.isPending || removeCouponMutation.isPending
+  const value: CartContextValue = {
+    itemIds: cart.items.map((item) => item.nftId),
+    itemCount,
     items,
-    totalByCurrency,
-    isLoading: items.some((item) => item.isLoading),
-    hasErrors: items.some((item) => item.hasError),
+    cart: cartQuery.data,
+    quote,
+    isLoading: session.isLoading || cartQuery.isLoading,
+    isQuoteLoading: quoteQuery.isFetching,
+    isSaving,
+    hasErrors: cartQuery.isError || quoteQuery.isError,
+    errorMessage: errorMessage ?? (cartQuery.isError ? 'Não foi possível carregar seu carrinho. Tente novamente.' : quoteQuery.isError ? 'Não foi possível atualizar a cotação. Seus itens foram preservados.' : null),
+    notice,
     addItem,
+    updateQuantity,
     removeItem,
     clearCart,
-  }), [itemIds, items, totalByCurrency, addItem, removeItem, clearCart])
+    applyCoupon,
+    removeCoupon,
+    refreshQuote,
+    dismissNotice: () => setNotice(null),
+  }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }

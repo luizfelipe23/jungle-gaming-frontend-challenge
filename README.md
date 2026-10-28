@@ -14,7 +14,15 @@ Os detalhes extras simulados (criador, token e atributos) são opcionais no tipo
 
 ## Carrinho
 
-Acesse `/cart` pelo ícone do cabeçalho. Cada NFT é tratado como uma unidade única; o carrinho do visitante persiste IDs em `localStorage` e carrega os dados atuais pelo endpoint de detalhes. Os subtotais e o total são exibidos por moeda (ETH e USD) sem conversão entre elas. É possível remover itens, voltar ao catálogo ou prosseguir para `/checkout`, que permanece como placeholder. A validação final de preço e disponibilidade será feita na etapa de checkout.
+Acesse `/cart` pelo cabeçalho. O visitante persiste linhas com identificador do NFT, edição opcional e quantidade inteira em `frontend-challenge:cart:guest:v1`; o formato antigo `{ version: 1, itemIds }` migra para o esquema 2 sem perder IDs válidos. Preços não são persistidos. Os endpoints `GET/POST /api/cart`, `POST /api/cart/items`, `PATCH/DELETE /api/cart/items/:itemId`, `DELETE /api/cart`, `POST/DELETE /api/cart/coupon`, `POST /api/cart/quote` e `POST /api/cart/merge` passam pelo Axios e são simulados no MSW.
+
+O mock valida disponibilidade e limite por compra em cada inclusão/alteração. Linhas do mesmo NFT e edição são consolidadas; edições diferentes permanecem separadas. Cotações retornam quantidades aceitas, preço atual, subtotal, desconto, taxa de rede, total, moeda, versão e validade. Apenas `KURIO10` (10%) é válido; `EXPIRED` reproduz um cupom expirado e códigos desconhecidos retornam erro sem apagar os itens. As taxas simuladas são `0.005 ETH` e `0.50 USD` por moeda usada.
+
+Preços ETH trafegam como strings decimais e são somados, multiplicados e descontados com `BigInt` em escala fixa; USD também usa aritmética decimal e arredondamento de centavos. ETH e USD permanecem separados. Uma cotação antiga não é apresentada como definitiva durante atualização ou falha, e o checkout fica desabilitado quando há item indisponível, falha ou cotação pendente/expirada.
+
+Após login, `POST /api/cart/merge` consolida o carrinho de visitante com o carrinho associado ao usuário e limita quantidades ao estoque atual. Problemas parciais aparecem como aviso. Só depois da confirmação da API a chave de visitante é removida. Carrinhos simulados de usuários ficam isolados por identidade; logout e expiração mantêm a chave visitante intacta.
+
+Enquanto há itens no carrinho, o cliente Socket.IO recebe eventos `nft.updated`. Nos testes E2E, um servidor Socket.IO de suporte inicia junto com o Vite e encerra com ele; o MSW altera preço/estoque e o teste emite o evento pelo servidor para verificar a atualização da cotação e o bloqueio do checkout. O checkout continua protegido e é apenas placeholder.
 
 ## Autenticacao simulada
 
@@ -54,7 +62,7 @@ Execute os testes E2E no container oficial do Playwright, sem instalar Node ou C
 docker compose run --rm e2e
 ```
 
-O container instala as dependências com `npm ci`, inicia seu próprio servidor Vite e executa os testes Chromium. O Playwright aguarda o servidor ficar disponível e encerra o Vite ao final da execução. O serviço de testes tem um volume de dependências separado do ambiente de desenvolvimento.
+O container instala as dependências com `npm ci`, inicia seu próprio servidor Vite e um servidor Socket.IO de suporte ao E2E, executa os testes Chromium e encerra os dois processos ao final. O serviço de testes tem um volume de dependências separado do ambiente de desenvolvimento.
 
 Se um antivírus ou proxy inspecionar HTTPS, consulte no guia E2E como fornecer a CA confiável ao container sem desativar a validação TLS.
 
