@@ -12,6 +12,13 @@ export const nftFixtures: Nft[] = [
     collection: 'Ashen Legion',
     rarity: 'Legendary',
     createdAt: '2026-09-27T12:00:00.000Z',
+    creator: { name: 'Mara Voss', handle: '@maravoss' },
+    tokenId: '001',
+    attributes: [
+      { traitType: 'Elemento', value: 'Brasa' },
+      { traitType: 'Edição', value: '1 de 25' },
+      { traitType: 'Raridade', value: 'Lendária' },
+    ],
   },
   {
     id: 'nft-002',

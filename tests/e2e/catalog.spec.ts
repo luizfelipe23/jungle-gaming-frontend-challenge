@@ -43,7 +43,27 @@ test('opens the matching details route from a card', async ({ page }) => {
   await page.getByRole('link', { name: 'Ver detalhes de Crimson Ember' }).click()
 
   await expect(page).toHaveURL(/\/nft\/nft-001$/)
-  await expect(page.getByRole('heading', { name: 'Detalhes do NFT' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Crimson Ember' })).toBeVisible()
+  await expect(page.getByText('Mara Voss')).toBeVisible()
+})
+
+test('adds an available NFT to the shared cart', async ({ page }) => {
+  await page.goto('/nft/nft-001')
+  await page.getByRole('button', { name: 'Adicionar ao carrinho' }).click()
+
+  await expect(page.getByRole('button', { name: 'Adicionado ao carrinho' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Abrir carrinho, 1 item' })).toBeVisible()
+})
+
+test('shows a not found state for an unknown NFT and remains usable on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/nft/unknown-id')
+  await expect(page.getByRole('heading', { name: 'Este NFT não existe.' })).toBeVisible()
+  await page.getByRole('link', { name: /voltar ao catálogo/i }).click()
+  await page.getByRole('link', { name: 'Ver detalhes de Crimson Ember' }).click()
+  await expect(page.getByRole('heading', { name: 'Crimson Ember' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Adicionar ao carrinho' })).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
 })
 
 test('keeps search, filters, cards, and bottom navigation usable on mobile', async ({ page }) => {

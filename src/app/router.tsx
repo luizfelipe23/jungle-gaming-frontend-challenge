@@ -2,6 +2,7 @@ import { createBrowserHistory, createMemoryHistory, createRootRoute, createRoute
 
 import { AppLayout } from '../components/layout/AppLayout'
 import { CatalogPage } from '../features/catalog/pages/CatalogPage'
+import { NftDetailsPage } from '../features/catalog/pages/NftDetailsPage'
 import { validateCatalogSearch } from '../features/catalog/types/catalogSearch'
 
 const rootRoute = createRootRoute({
@@ -28,12 +29,7 @@ export const catalogRoute = createRoute({
 const nftDetailsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/nft/$nftId',
-  component: () => (
-    <section className="rounded-2xl border border-white/10 bg-[#241612] p-8 text-[#F5F1EB]">
-      <h1 className="text-3xl font-semibold">Detalhes do NFT</h1>
-      <p className="mt-3 text-[#CFB28C]">Esta rota ainda será implementada na próxima etapa.</p>
-    </section>
-  ),
+  component: NftDetailsPage,
 })
 
 const cartRoute = createRoute({

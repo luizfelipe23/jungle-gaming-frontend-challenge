@@ -100,11 +100,51 @@ describe('Catálogo', () => {
   })
 
   it('navega do card para a rota de detalhes correspondente', async () => {
-    renderCatalog()
+    const { router } = renderCatalog()
 
     fireEvent.click(await screen.findByRole('link', { name: 'Ver detalhes de Crimson Ember' }))
 
-    expect(await screen.findByRole('heading', { name: 'Detalhes do NFT' })).toBeInTheDocument()
+    await waitFor(() => expect(router.state.location.pathname).toBe('/nft/nft-001'))
+    expect(await screen.findByRole('heading', { name: 'Crimson Ember' })).toBeInTheDocument()
+    expect(screen.getByText('Mara Voss')).toBeInTheDocument()
+  })
+
+  it('carrega os detalhes completos pelo endpoint individual e adiciona o NFT ao carrinho', async () => {
+    renderCatalog('/nft/nft-001')
+
+    expect(await screen.findByRole('heading', { name: 'Crimson Ember' })).toBeInTheDocument()
+    expect(screen.getByText('An emberborn masterpiece with volcanic reflections and a rare forged edge.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Características' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar ao carrinho' }))
+    expect(screen.getByRole('button', { name: 'Adicionado ao carrinho' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Abrir carrinho, 1 item' })).toBeInTheDocument()
+  })
+
+  it('mostra o estado de carregamento dos detalhes enquanto consulta a API', async () => {
+    server.use(http.get('/api/nfts/nft-001', async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      return HttpResponse.json(nftFixtures[0])
+    }))
+    renderCatalog('/nft/nft-001')
+
+    expect(await screen.findByRole('status', { name: 'Carregando detalhes do NFT' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Crimson Ember' })).toBeInTheDocument()
+  })
+
+  it('trata NFT inexistente e erros da consulta de detalhes', async () => {
+    renderCatalog('/nft/unknown-id')
+    expect(await screen.findByRole('heading', { name: 'Este NFT não existe.' })).toBeInTheDocument()
+
+    server.use(http.get('/api/nfts/nft-001', () => HttpResponse.json({ message: 'falha' }, { status: 503 })))
+    renderCatalog('/nft/nft-001')
+    expect(await screen.findByRole('heading', { name: 'Ocorreu um erro ao carregar este NFT.' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeInTheDocument()
+  })
+
+  it('desabilita compra para itens indisponíveis e apresenta fallback sem imagem', async () => {
+    renderCatalog('/nft/nft-012')
+    expect(await screen.findByRole('img', { name: 'Imagem de Obsidian Bloom #501 indisponível' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Obra reservada' })).toBeDisabled()
   })
 
   it('mostra um estado alternativo quando a imagem do NFT está ausente', async () => {

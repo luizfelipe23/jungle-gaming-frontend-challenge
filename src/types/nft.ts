@@ -9,4 +9,15 @@ export interface Nft {
   collection: string
   rarity: string
   createdAt: string
+  creator?: {
+    name: string
+    handle: string
+  }
+  tokenId?: string
+  attributes?: NftAttribute[]
+}
+
+export interface NftAttribute {
+  traitType: string
+  value: string
 }

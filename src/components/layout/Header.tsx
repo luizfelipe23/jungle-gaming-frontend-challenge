@@ -1,7 +1,9 @@
 import { Search, ShoppingBag } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
+import { useCart } from '../../features/cart/useCart'
 
 export function Header() {
+  const { itemIds } = useCart()
   return (
     <header className="sticky top-0 z-40 border-b border-[#D28A4C]/30 bg-[#140D0A]/95 backdrop-blur-md">
       <div className="mx-auto flex h-[72px] max-w-[1200px] items-center justify-between gap-4 px-4 sm:px-6 lg:h-[84px] lg:px-0">
@@ -20,8 +22,9 @@ export function Header() {
           <a href="#catalog-search" aria-label="Buscar NFTs" className="inline-flex h-10 w-10 items-center justify-center rounded-md text-[#F5F1EB] transition hover:bg-[#241612] hover:text-[#E89B55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E89B55]">
             <Search aria-hidden="true" className="h-5 w-5" />
           </a>
-          <Link to="/cart" aria-label="Abrir carrinho" className="inline-flex h-10 w-10 items-center justify-center rounded-md text-[#F5F1EB] transition hover:bg-[#241612] hover:text-[#E89B55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E89B55]">
+          <Link to="/cart" aria-label={`Abrir carrinho${itemIds.length ? `, ${itemIds.length} ${itemIds.length === 1 ? 'item' : 'itens'}` : ''}`} className="relative inline-flex h-10 w-10 items-center justify-center rounded-md text-[#F5F1EB] transition hover:bg-[#241612] hover:text-[#E89B55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E89B55]">
             <ShoppingBag aria-hidden="true" className="h-5 w-5" />
+            {itemIds.length > 0 && <span aria-hidden="true" className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D28A4C] px-1 text-[9px] font-bold text-[#140D0A]">{itemIds.length}</span>}
           </Link>
           <Link to="/login" className="hidden min-h-9 items-center justify-center rounded-md bg-[#D28A4C] px-4 text-xs font-semibold text-[#140D0A] transition hover:bg-[#E89B55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F5F1EB] sm:inline-flex">
             Entrar

@@ -4,7 +4,13 @@ Aplicação inicial do Frontend Challenge, construída com React, TypeScript e V
 
 ## Catálogo
 
-A página inicial segue o layout responsivo da Kurio e carrega as obras pela API simulada do MSW. Busca, filtros por disponibilidade, coleção, raridade, moeda e faixa de preço, ordenação e paginação ficam sincronizados com a URL. Os cards levam à rota de detalhes já existente; carrinho e demais telas continuam como placeholders.
+A página inicial segue o layout responsivo da Kurio e carrega as obras pela API simulada do MSW. Busca, filtros por disponibilidade, coleção, raridade, moeda e faixa de preço, ordenação e paginação ficam sincronizados com a URL. Os cards levam à página de detalhes do NFT; o carrinho completo e as demais telas continuam como placeholders.
+
+## Detalhes do NFT
+
+Abra uma obra pelo card do catálogo ou acesse diretamente `/nft/<id>` (por exemplo, `/nft/nft-001`). A página consulta `GET /api/nfts/:id`, exibe os detalhes disponíveis, trata carregamento, falhas, IDs inexistentes (404) e imagens ausentes, e funciona em telas pequenas e grandes. Para testar a ação de compra, use um NFT com status `available`: a inclusão é mantida em memória enquanto a aplicação estiver aberta; a página completa do carrinho ainda não faz parte desta etapa.
+
+Os detalhes extras simulados (criador, token e atributos) são opcionais no tipo `Nft`, para que registros sem esses dados continuem válidos.
 
 ## Desenvolvimento
 
