@@ -10,6 +10,8 @@ import { LoginPage } from '../features/auth/pages/LoginPage'
 import { RegisterPage } from '../features/auth/pages/RegisterPage'
 import { CheckoutPage } from '../features/checkout/pages/CheckoutPage'
 import { OrderConfirmationPage } from '../features/orders/pages/OrderConfirmationPage'
+import { ProfilePage } from '../features/profile/pages/ProfilePage'
+import { WalletsPage } from '../features/wallets/pages/WalletsPage'
 import { sessionQueryOptions } from '../features/auth/hooks/useSession'
 import { validateCatalogSearch } from '../features/catalog/types/catalogSearch'
 
@@ -100,26 +102,14 @@ const profileRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/profile',
   beforeLoad: requireSession,
-  component: () => (
-    <section className="rounded-2xl border border-white/10 bg-[#241612] p-8 text-[#F5F1EB]">
-      <h1 className="text-3xl font-semibold">Perfil do colecionador</h1>
-      <p className="mt-3 text-[#CFB28C]">Página provisória em construção.</p>
-    </section>
-  ),
+  component: ProfilePage,
 })
-
 const walletsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/wallets',
   beforeLoad: requireSession,
-  component: () => (
-    <section className="rounded-2xl border border-white/10 bg-[#241612] p-8 text-[#F5F1EB]">
-      <h1 className="text-3xl font-semibold">Carteiras</h1>
-      <p className="mt-3 text-[#CFB28C]">Página provisória em construção.</p>
-    </section>
-  ),
+  component: WalletsPage,
 })
-
 export const routeTree = rootRoute.addChildren([
   appLayoutRoute.addChildren([
     catalogRoute,

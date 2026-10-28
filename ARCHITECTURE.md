@@ -1,4 +1,4 @@
-# Arquitetura inicial
+# Arquitetura atual e fluxos principais
 
 ## Camadas e responsabilidades
 
@@ -15,13 +15,13 @@ A pasta `src/components` guarda os blocos visuais reutilizáveis do shell e os p
 
 ### 3. Features
 Cada funcionalidade vai para sua pasta em `src/features` para manter o código acoplado ao domínio.
-- `catalog`: API, hooks, página, e dados de domínio do catálogo inicial.
-- Futuras features como `checkout`, `wallets`, `profile` e `auth` seguem o mesmo padrão: serviço, hooks, tipos e parte visual específica.
+- `catalog`: API, hooks, página e componentes do catálogo, detalhes e favoritos.
+- `checkout`, `orders`, `wallets`, `profile` e `auth`: fluxos de compra, pedidos, conta e sessão, cada um com seus tipos, APIs e componentes de interface.
 
 ### 4. Camada de dados e HTTP
 A pasta `src/lib` separa infraestrutura técnica de UI.
 - `api/http.ts`: instância central do Axios com `baseURL`, timeout e configurações globais.
-- `realtime/`: cliente e tipos para preparação da integração com Socket.IO.
+- `realtime/`: cliente e tipos compartilhados para eventos Socket.IO de NFTs e pedidos.
 
 ### 5. Mocks
 Em `src/mocks`, os dados simulados são separados por domínio.
@@ -47,7 +47,7 @@ Em `src/mocks`, os dados simulados são separados por domínio.
 ### Router
 - A árvore de rotas fica em `src/app/router.tsx`.
 - Rotas iniciais já estão declaradas para `/`, `/nft/$nftId`, `/cart`, `/checkout`, `/orders/$orderId/confirmation`, `/login`, `/register`, `/profile` e `/wallets`.
-- As páginas ainda não implementadas aparecem como placeholders identificados para não falsificar funcionalidades prontas.
+- As rotas de conta e checkout são protegidas por sessão e carregam as páginas implementadas pelas respectivas features.
 
 ### Query
 - O `QueryClientProvider` é aplicado globalmente em `AppProviders`.
@@ -103,3 +103,12 @@ Para validar o fluxo sem backend, o Playwright inicia o servidor Socket.IO de te
 - Cart consumption happens only after REST reports `confirmed`. The API removes only quantities present in that order from the current cart, preserves later/additional lines, and tracks consumed order IDs so a refresh does not consume twice. Pending, declined and unknown outcomes preserve the cart.
 - MSW scenario storage supports pending/confirmed/declined outcomes, changed fees, expired coupons, wallet rejection/disconnect, transient errors, timeout after persistence, session expiry and lookup failure. Browser E2E tests configure deterministic values in the same local storage read by handlers.
 - This is a browser simulation: `localStorage` cannot provide durable cross-device idempotency, database transactions, atomic stock reservation, authorization guarantees or payment settlement. A production service must own those guarantees server-side.
+
+## Perfil, carteiras e favoritos
+
+- `features/profile` consulta e salva o perfil por `GET/PATCH /api/profile`, atualiza o avatar por `POST /api/profile/avatar` e altera a senha por `POST /api/profile/password`. A resposta confirmada atualiza o cache privado e os campos de sessao exibidos no app. O mock valida a senha atual e persiste apenas salt/hash PBKDF2; a estrategia segue sendo uma simulacao de desenvolvimento.
+- `features/wallets` usa a API `GET/POST /api/wallets` e `PATCH /api/wallets/:walletId`. Os dados incluem rede(s), endereco, nome, apelido, tipo, perfil ENS/email/referral conforme o formulario de referencia e `isPrimary`. O mock garante que exista uma carteira principal e que carteiras sejam isoladas por usuario. Checkout consulta a mesma lista via chave privada `['private', userId, 'wallets']`.
+- Carteiras, perfil e favoritos sao persistidos no armazenamento local do MSW sob chaves distintas por identidade. A troca de conta invalida as consultas privadas pelo mecanismo de sessao existente; a chave do carrinho visitante permanece fora desse fluxo.
+- `features/catalog/api/favoritesApi.ts` usa `GET /api/favorites`, `PUT /api/favorites/:nftId` e `DELETE /api/favorites/:nftId`. Catalogo e detalhes compartilham a consulta de favoritos por usuario. A mutation atualiza o TanStack Query otimisticamente, restaura o snapshot anterior em erro e invalida a consulta depois da resposta.
+- O estado de teste `frontend-challenge:mock-account:scenario:v1` pode simular falha de leitura/salvamento do perfil, senha, lista/cadastro/edicao de carteiras e adicao/retirada de favorito. Os testes E2E alteram esse estado de maneira deterministica.
+- Avatares e dados da conta ficam em `localStorage` somente para a simulacao. Uma aplicacao real deve validar imagens e credenciais no servidor, aplicar autorizacao por conta e persistir a carteira/favorito em banco de dados.

@@ -4,7 +4,7 @@ import type { CreateOrderInput, WalletConnection } from '../../features/checkout
 import { quoteFingerprint } from '../../features/checkout/utils/quoteFingerprint'
 import type { Order, OrderStatus } from '../../features/orders/types/order'
 import { mockSessionsStorageKey, type MockSessionRecord } from '../../features/auth/types/session'
-import { walletsByUserId } from '../data/wallets'
+import { getWalletsForUser } from '../data/accountStore'
 import { readCheckoutScenario, readOrders, readWalletConnections, saveOrders, saveWalletConnections, writeCheckoutScenario } from '../data/orderStore'
 import { getOwnedCart, makeQuote, ownerId } from './cartHandlers'
 import { nftFixtures } from '../data/nfts'
@@ -60,17 +60,11 @@ function transitionOrder(order: Order, status: OrderStatus): Order {
 }
 
 export const orderHandlers = [
-  http.get('/api/wallets', ({ request }) => {
-    const owner = ownerId(request)
-    if (!owner.id) return error('UNAUTHENTICATED', 'Entre novamente para continuar.', 401)
-    return HttpResponse.json(walletsByUserId[owner.id] ?? [])
-  }),
-
   http.get('/api/wallets/:walletId/connection', ({ request, params }) => {
     const owner = ownerId(request)
     if (!owner.id) return error('UNAUTHENTICATED', 'Entre novamente para continuar.', 401)
     const walletId = String(params.walletId)
-    const wallet = (walletsByUserId[owner.id] ?? []).find((item) => item.id === walletId)
+    const wallet = getWalletsForUser(owner.id).find((item) => item.id === walletId)
     if (!wallet) return error('WALLET_NOT_FOUND', 'Carteira não encontrada.', 404)
     const connection = readWalletConnections(owner.id)[walletId]
     return HttpResponse.json<WalletConnection>({ status: connection ? 'connected' : 'disconnected', connectionId: connection?.connectionId ?? null, walletId, networkId: connection?.networkId ?? '' })
@@ -80,7 +74,7 @@ export const orderHandlers = [
     const owner = ownerId(request)
     if (!owner.id) return error('UNAUTHENTICATED', 'Entre novamente para continuar.', 401)
     const walletId = String(params.walletId)
-    const wallet = (walletsByUserId[owner.id] ?? []).find((item) => item.id === walletId)
+    const wallet = getWalletsForUser(owner.id).find((item) => item.id === walletId)
     if (!wallet) return error('WALLET_NOT_FOUND', 'Carteira não encontrada.', 404)
     const body = await request.json().catch(() => null) as { networkId?: unknown } | null
     const networkId = typeof body?.networkId === 'string' ? body.networkId : ''
@@ -137,7 +131,7 @@ export const orderHandlers = [
       return error('QUOTE_CHANGED', 'Os valores ou a disponibilidade mudaram. Revise a cotação atualizada antes de continuar.', 409, { quote: currentQuote })
     }
     if (scenario.expireCoupon && cart.couponCode) return error('QUOTE_CHANGED', 'O cupom expirou durante o checkout. Revise a cotação atualizada.', 409, { quote: makeQuote({ ...cart, couponCode: null }) })
-    const wallet = (walletsByUserId[owner.id] ?? []).find((item) => item.id === input.walletId)
+    const wallet = getWalletsForUser(owner.id).find((item) => item.id === input.walletId)
     const network = wallet?.networks.find((item) => item.id === input.networkId)
     if (!wallet || !network) return error('WALLET_NOT_FOUND', 'A carteira ou rede selecionada não está disponível.', 404)
     const connection = getWalletConnection(request, wallet.id)

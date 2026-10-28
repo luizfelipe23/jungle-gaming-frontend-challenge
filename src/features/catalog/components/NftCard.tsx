@@ -5,6 +5,7 @@ import { Link } from '@tanstack/react-router'
 import { Card } from '../../../components/ui/card'
 import type { Nft } from '../../../types/nft'
 import { formatDecimal } from '../../../lib/money'
+import { FavoriteButton } from './FavoriteButton'
 
 const statusLabels: Record<Nft['status'], string> = {
   available: 'Disponível',
@@ -18,7 +19,7 @@ export function NftCard({ nft }: NftCardProps) {
   const [imageUnavailable, setImageUnavailable] = useState(!nft.imageUrl)
 
   return (
-    <Card data-testid="nft-card" className="group overflow-hidden rounded-xl border-[#3F2319] bg-[#241612] transition duration-300 hover:-translate-y-1 hover:border-[#D28A4C]/70 hover:shadow-xl hover:shadow-black/30">
+    <Card data-testid="nft-card" className="group relative overflow-hidden rounded-xl border-[#3F2319] bg-[#241612] transition duration-300 hover:-translate-y-1 hover:border-[#D28A4C]/70 hover:shadow-xl hover:shadow-black/30">
       <Link
         to="/nft/$nftId"
         params={{ nftId: nft.id }}
@@ -66,6 +67,7 @@ export function NftCard({ nft }: NftCardProps) {
           </div>
         </div>
       </Link>
+      <FavoriteButton nftId={nft.id} nftName={nft.name} compact className="absolute right-3 top-3 z-10 h-9 w-9 border-white/20 bg-[#140D0A]/90 p-0" />
     </Card>
   )
 }

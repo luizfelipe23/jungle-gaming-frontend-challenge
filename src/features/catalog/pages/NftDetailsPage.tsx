@@ -10,6 +10,7 @@ import { useCart } from '../../cart/useCart'
 import { useNft } from '../hooks/useNfts'
 import type { Nft } from '../../../types/nft'
 import { formatDecimal } from '../../../lib/money'
+import { FavoriteButton } from '../components/FavoriteButton'
 
 const statusLabels: Record<Nft['status'], string> = {
   available: 'Disponível',
@@ -110,9 +111,12 @@ export function NftDetailsPage() {
             <input aria-label="Quantidade do NFT" type="number" min={1} max={maximumQuantity} step={1} value={quantity} onChange={(event) => setQuantity(Math.max(1, Math.min(maximumQuantity, Number(event.currentTarget.value) || 1)))} className="mt-2 h-10 w-full rounded-md border border-[#55321F] bg-[#140D0A] px-3 text-sm text-[#F5F1EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E89B55]" />
             <span className="mt-1 block text-[10px] text-[#B39483]">Até {maximumQuantity} unidade(s) disponíveis nesta edição.</span>
           </label>}
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
           <Button type="button" size="lg" disabled={!canAddToCart || isSaving} onClick={() => void addSelectedEdition()} className="w-full gap-2 disabled:cursor-not-allowed disabled:bg-[#55321F] disabled:text-[#B39483]">
             <ShoppingBag aria-hidden="true" className="h-4 w-4" />{isSaving ? 'Adicionando…' : added ? 'Adicionado ao carrinho' : alreadyInCart ? 'Adicionar mais ao carrinho' : canAddToCart ? 'Adicionar ao carrinho' : nft.status === 'reserved' ? 'Obra reservada' : nft.status === 'sold' ? 'Obra vendida' : 'Edição esgotada'}
           </Button>
+          <FavoriteButton nftId={nft.id} nftName={nft.name} />
+          </div>
           {cartError && <p role="alert" className="text-center text-xs text-red-200">{cartError}</p>}
           {added && <p role="status" className="text-center text-xs text-[#E89B55]">{quantity} unidade(s) adicionada(s) ao carrinho.</p>}
           {alreadyInCart && !added && <p role="status" className="text-center text-xs text-[#E89B55]">Esta edição já está no seu carrinho; uma nova adição será consolidada na quantidade.</p>}

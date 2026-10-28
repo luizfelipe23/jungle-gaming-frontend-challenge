@@ -5,7 +5,7 @@ export const walletsByUserId: Record<string, Wallet[]> = {
     {
       id: 'wallet-luna-primary',
       name: 'Carteira principal',
-      address: '0x71C7...9A42',
+      address: '0x0000000000000000000000000000000000009a42',
       networks: [
         { id: 'ethereum', name: 'Ethereum', currency: 'ETH' },
         { id: 'polygon', name: 'Polygon', currency: 'USD' },
@@ -14,7 +14,7 @@ export const walletsByUserId: Record<string, Wallet[]> = {
     {
       id: 'wallet-luna-vault',
       name: 'Cold vault',
-      address: '0xA2D1...034F',
+      address: '0x000000000000000000000000000000000000034f',
       networks: [{ id: 'ethereum', name: 'Ethereum', currency: 'ETH' }],
     },
   ],
@@ -22,7 +22,7 @@ export const walletsByUserId: Record<string, Wallet[]> = {
     {
       id: 'wallet-rafael-primary',
       name: 'Carteira principal',
-      address: '0x39AB...17C8',
+      address: '0x00000000000000000000000000000000000017c8',
       networks: [
         { id: 'ethereum', name: 'Ethereum', currency: 'ETH' },
         { id: 'polygon', name: 'Polygon', currency: 'USD' },

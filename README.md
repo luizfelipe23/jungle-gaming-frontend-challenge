@@ -88,3 +88,11 @@ Pedidos podem estar `pending`, `confirmed` ou `declined`; apenas pedidos pendent
 Enquanto pendente, a tela consulta a API e invalida a consulta quando recebe `order.updated` via Socket.IO. A API REST recupera o pedido apos refresh/reconexao. Falha de comunicacao nao e tratada como recusa. No mock, pedidos e tentativas ficam em `localStorage` por usuario; isso permite exercitar o fluxo no navegador, mas nao substitui transacoes, idempotencia duravel ou controle concorrente de um backend real.
 
 Para executar os cenarios de checkout, use `docker compose run --rm e2e`. A suite cobre confirmacao, recusa, pendencia, mudanca de cotacao, estoque, cupom expirado, taxas, carteira, falhas transitorias, timeout, recuperacao e expiracao de sessao.
+
+## Perfil, carteiras e favoritos
+
+As rotas privadas `/profile` e `/wallets` permitem editar dados do colecionador, avatar, senha e carteiras simuladas. Perfil usa `GET/PATCH /api/profile`, `POST /api/profile/avatar` e `POST /api/profile/password`; as carteiras usam `GET/POST /api/wallets` e `PATCH /api/wallets/:walletId`. Senhas nunca sao armazenadas em texto claro: o mock verifica e atualiza hashes PBKDF2. Avatar aceita PNG, JPEG ou WebP de ate 1 MB e fica associado ao perfil local simulado.
+
+Carteiras e favoritos sao identificados por usuario no armazenamento do MSW. Uma conta mantem exatamente uma carteira principal; cadastros, edicoes e selecao da principal passam pela API e atualizam a mesma consulta usada no checkout. Favoritos usam `GET /api/favorites`, `PUT /api/favorites/:nftId` e `DELETE /api/favorites/:nftId`; os botoes aparecem no catalogo e nos detalhes. A mutation do favorito atualiza o cache de forma otimista e reverte em falha.
+
+O mock persiste os dados no navegador para demonstrar refresh e isolamento entre contas; isso nao oferece garantias de seguranca, durabilidade ou sincronizacao entre dispositivos. O perfil, carteiras e favoritos nao devem ser considerados dados reais de producao. Execute `docker compose run --rm e2e` para validar os fluxos de conta junto com a regressao do catalogo, carrinho e checkout.

@@ -9,6 +9,13 @@ export interface Wallet {
   name: string
   address: string
   networks: WalletNetwork[]
+  nickname?: string
+  walletType?: 'software' | 'hardware'
+  profileName?: string
+  ensName?: string
+  email?: string
+  referralCode?: string
+  isPrimary?: boolean
 }
 
 export type WalletConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'rejected'

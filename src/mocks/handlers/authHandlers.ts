@@ -20,11 +20,11 @@ function readStoredArray<T>(key: string): T[] | null {
   }
 }
 
-function getUsers(): MockUserRecord[] {
+export function getMockUsers(): MockUserRecord[] {
   return readStoredArray<MockUserRecord>(mockUsersStorageKey) ?? demoAuthUsers
 }
 
-function saveUsers(users: MockUserRecord[]) {
+export function saveMockUsers(users: MockUserRecord[]) {
   window.localStorage.setItem(mockUsersStorageKey, JSON.stringify(users))
 }
 
@@ -40,15 +40,23 @@ function toHex(bytes: Uint8Array) {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
-async function hashPassword(password: string, salt: string) {
+export async function hashMockPassword(password: string, salt: string) {
   const key = await crypto.subtle.importKey('raw', textEncoder.encode(password), 'PBKDF2', false, ['deriveBits'])
   const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: textEncoder.encode(salt), iterations: passwordIterations, hash: 'SHA-256' }, key, 256)
   return toHex(new Uint8Array(bits))
 }
 
-function getToken(request: Request) {
+export function getRequestToken(request: Request) {
   const authorization = request.headers.get('Authorization')
   return authorization?.startsWith('Bearer ') ? authorization.slice(7) : null
+}
+
+export function getMockUserFromRequest(request: Request): MockUserRecord | null {
+  const token = getRequestToken(request)
+  if (!token) return null
+  const session = getSessions().find((candidate) => candidate.token === token && candidate.expiresAt > Date.now())
+  if (!session) return null
+  return getMockUsers().find((user) => user.id === session.userId) ?? null
 }
 
 function authError(code: AuthApiError['code'], message: string, status: number, fieldErrors?: AuthApiError['fieldErrors']) {
@@ -72,11 +80,11 @@ export const authHandlers = [
     if (password.length < 10 || !/\d/.test(password)) fieldErrors.password = 'Use ao menos 10 caracteres e inclua um número.'
     if (Object.keys(fieldErrors).length) return authError('VALIDATION_ERROR', 'Confira os campos destacados.', 400, fieldErrors)
 
-    const users = getUsers()
+    const users = getMockUsers()
     if (users.some((user) => user.email === email)) return authError('EMAIL_EXISTS', 'Este e-mail já possui uma conta.', 409, { email: 'Este e-mail já está cadastrado.' })
 
     const salt = toHex(crypto.getRandomValues(new Uint8Array(16)))
-    const passwordHash = await hashPassword(password, salt)
+    const passwordHash = await hashMockPassword(password, salt)
     const user: MockUserRecord = {
       id: `user-${crypto.randomUUID()}`,
       name,
@@ -84,7 +92,7 @@ export const authHandlers = [
       salt,
       passwordHash,
     }
-    saveUsers([...users, user])
+    saveMockUsers([...users, user])
 
     return HttpResponse.json({ user: { id: user.id, name: user.name, email: user.email } }, { status: 201 })
   }),
@@ -95,14 +103,14 @@ export const authHandlers = [
     const password = typeof body?.password === 'string' ? body.password : ''
     if (!email || !password) return authError('VALIDATION_ERROR', 'Informe e-mail e senha.', 400)
 
-    const user = getUsers().find((candidate) => candidate.email === email)
-    const passwordHash = user ? await hashPassword(password, user.salt) : ''
+    const user = getMockUsers().find((candidate) => candidate.email === email)
+    const passwordHash = user ? await hashMockPassword(password, user.salt) : ''
     if (!user || passwordHash !== user.passwordHash) return authError('INVALID_CREDENTIALS', 'E-mail ou senha inválidos.', 401)
 
     const token = crypto.randomUUID()
     const sessions = getSessions()
-    removeSession(getToken(request))
-    saveSessions([...sessions.filter((session) => session.token !== getToken(request)), { token, userId: user.id, expiresAt: Date.now() + sessionDurationMs }])
+    removeSession(getRequestToken(request))
+    saveSessions([...sessions.filter((session) => session.token !== getRequestToken(request)), { token, userId: user.id, expiresAt: Date.now() + sessionDurationMs }])
 
     return HttpResponse.json({
       token,
@@ -111,7 +119,7 @@ export const authHandlers = [
   }),
 
   http.get('/api/auth/session', ({ request }) => {
-    const token = getToken(request)
+    const token = getRequestToken(request)
     const sessions = getSessions()
     const session = sessions.find((candidate) => candidate.token === token)
     if (!token || !session) return authError('UNAUTHENTICATED', 'É necessário entrar na sua conta.', 401)
@@ -120,7 +128,7 @@ export const authHandlers = [
       return authError('SESSION_EXPIRED', 'Sua sessão expirou. Entre novamente para continuar.', 401)
     }
 
-    const user = getUsers().find((candidate) => candidate.id === session.userId)
+    const user = getMockUsers().find((candidate) => candidate.id === session.userId)
     if (!user) {
       removeSession(token)
       return authError('UNAUTHENTICATED', 'Não foi possível localizar a conta desta sessão.', 401)
@@ -130,7 +138,7 @@ export const authHandlers = [
   }),
 
   http.post('/api/auth/logout', ({ request }) => {
-    removeSession(getToken(request))
+    removeSession(getRequestToken(request))
     return new HttpResponse(null, { status: 204 })
   }),
 ]
