@@ -1,9 +1,11 @@
 import { Search, ShoppingBag } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { useCart } from '../../features/cart/useCart'
+import { useSession } from '../../features/auth/hooks/useSession'
 
 export function Header() {
   const { itemIds } = useCart()
+  const { user, isLoading: sessionLoading, logout, isLoggingOut } = useSession()
   return (
     <header className="sticky top-0 z-40 border-b border-[#D28A4C]/30 bg-[#140D0A]/95 backdrop-blur-md">
       <div className="mx-auto flex h-[72px] max-w-[1200px] items-center justify-between gap-4 px-4 sm:px-6 lg:h-[84px] lg:px-0">
@@ -26,9 +28,13 @@ export function Header() {
             <ShoppingBag aria-hidden="true" className="h-5 w-5" />
             {itemIds.length > 0 && <span aria-hidden="true" className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D28A4C] px-1 text-[9px] font-bold text-[#140D0A]">{itemIds.length}</span>}
           </Link>
-          <Link to="/login" className="hidden min-h-9 items-center justify-center rounded-md bg-[#D28A4C] px-4 text-xs font-semibold text-[#140D0A] transition hover:bg-[#E89B55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F5F1EB] sm:inline-flex">
-            Entrar
-          </Link>
+          {sessionLoading ? <span aria-label="Verificando sessão" className="hidden h-8 w-16 animate-pulse rounded bg-[#241612] sm:block" /> : user ? <div className="hidden items-center gap-3 sm:flex">
+            <Link to="/profile" className="max-w-28 truncate text-xs text-[#CFB28C] hover:text-[#E89B55]">{user.name}</Link>
+            <button type="button" disabled={isLoggingOut} onClick={() => void logout()} className="text-xs font-semibold text-[#E89B55] hover:text-[#F5F1EB] disabled:opacity-50">{isLoggingOut ? 'Saindo…' : 'Sair'}</button>
+          </div> : <div className="hidden items-center gap-2 sm:flex">
+            <Link to="/login" className="inline-flex min-h-9 items-center justify-center rounded-md bg-[#D28A4C] px-4 text-xs font-semibold text-[#140D0A] transition hover:bg-[#E89B55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F5F1EB]">Entrar</Link>
+            <Link to="/register" className="hidden min-h-9 items-center justify-center rounded-md border border-[#55321F] px-3 text-xs text-[#CFB28C] transition hover:border-[#D28A4C] hover:text-[#F5F1EB] lg:inline-flex">Criar conta</Link>
+          </div>}
         </div>
       </div>
     </header>

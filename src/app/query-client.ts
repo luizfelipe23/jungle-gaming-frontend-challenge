@@ -11,3 +11,5 @@ export function createQueryClient() {
     },
   })
 }
+
+export const appQueryClient = createQueryClient()

@@ -1,0 +1,69 @@
+import { useState, type FormEvent } from 'react'
+import { Link } from '@tanstack/react-router'
+import { isAxiosError } from 'axios'
+
+import { Button } from '../../../components/ui/button'
+import { useLogin } from '../hooks/useSession'
+import type { AuthApiError, AuthUser, LoginInput } from '../types/auth'
+import { validateLogin, type AuthFieldErrors } from '../validation'
+import { AuthField } from './AuthField'
+
+export function LoginForm({ onSuccess }: { onSuccess: (user: AuthUser) => void }) {
+  const [values, setValues] = useState<LoginInput>({ email: '', password: '' })
+  const [fieldErrors, setFieldErrors] = useState<AuthFieldErrors>({})
+  const [apiError, setApiError] = useState('')
+  const login = useLogin()
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const errors = validateLogin(values)
+    setFieldErrors(errors)
+    setApiError('')
+    if (Object.keys(errors).length) return
+
+    try {
+      const user = await login.mutateAsync({ email: values.email.trim(), password: values.password })
+      onSuccess(user)
+    } catch (error) {
+      const response = isAxiosError<AuthApiError>(error) ? error.response?.data : undefined
+      setFieldErrors((current) => ({ ...current, ...response?.fieldErrors }))
+      setApiError(response?.message ?? 'Não foi possível entrar. Verifique sua conexão e tente novamente.')
+    }
+  }
+
+  return <form onSubmit={(event) => void submit(event)} noValidate className="space-y-5">
+    <AuthField
+      label="E-mail"
+      name="email"
+      type="email"
+      autoComplete="email"
+      placeholder="voce@exemplo.com"
+      required
+      value={values.email}
+      error={fieldErrors.email}
+      onChange={(event) => {
+        const email = event.currentTarget.value
+        setValues((current) => ({ ...current, email }))
+      }}
+    />
+    <AuthField
+      label="Senha"
+      name="password"
+      type="password"
+      autoComplete="current-password"
+      required
+      value={values.password}
+      error={fieldErrors.password}
+      onChange={(event) => {
+        const password = event.currentTarget.value
+        setValues((current) => ({ ...current, password }))
+      }}
+    />
+
+    {apiError && <p role="alert" className="rounded-md border border-red-400/30 bg-red-950/30 p-3 text-xs leading-5 text-red-200">{apiError}</p>}
+    <Button type="submit" size="lg" disabled={login.isPending} className="w-full">
+      {login.isPending ? 'Entrando…' : 'Entrar'}
+    </Button>
+    <p className="text-center text-xs text-[#CFB28C]">Ainda não tem uma conta? <Link to="/register" className="font-semibold text-[#E89B55] hover:underline">Cadastre-se</Link></p>
+  </form>
+}
