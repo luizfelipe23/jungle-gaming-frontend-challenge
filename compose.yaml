@@ -1,0 +1,36 @@
+services:
+  app:
+    container_name: frontend-challenge-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: /api
+      VITE_API_TIMEOUT: "15000"
+      VITE_ENABLE_MOCKS: "true"
+      VITE_SOCKET_URL: http://localhost:3001
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    command: sh -lc "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    stdin_open: true
+    tty: true
+
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.64.1-jammy
+    working_dir: /workspace
+    environment:
+      CI: "true"
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+    volumes:
+      - .:/workspace
+      - e2e_node_modules:/workspace/node_modules
+    command: >-
+      sh -lc "npm ci && npm run test:e2e"
+
+volumes:
+  node_modules:
+  e2e_node_modules:
