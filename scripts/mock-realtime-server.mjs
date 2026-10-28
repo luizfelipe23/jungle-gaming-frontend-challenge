@@ -24,11 +24,11 @@ const httpServer = createServer((request, response) => {
     request.on('end', () => {
       try {
         const { event } = JSON.parse(body)
-        if (event?.type !== 'nft.updated' || typeof event.resourceId !== 'string' || !Number.isSafeInteger(event.version)) {
+        if (!['nft.updated', 'order.updated'].includes(event?.type) || typeof event.resourceId !== 'string' || !Number.isSafeInteger(event.version)) {
           response.writeHead(400).end('Invalid event')
           return
         }
-        io.emit('nft.updated', event)
+        io.emit(event.type, event)
         response.writeHead(200, { 'Content-Type': 'application/json' })
         response.end(JSON.stringify({ delivered: io.engine.clientsCount }))
       } catch {

@@ -8,6 +8,8 @@ import { NftDetailsPage } from '../features/catalog/pages/NftDetailsPage'
 import { CartPage } from '../features/cart/pages/CartPage'
 import { LoginPage } from '../features/auth/pages/LoginPage'
 import { RegisterPage } from '../features/auth/pages/RegisterPage'
+import { CheckoutPage } from '../features/checkout/pages/CheckoutPage'
+import { OrderConfirmationPage } from '../features/orders/pages/OrderConfirmationPage'
 import { sessionQueryOptions } from '../features/auth/hooks/useSession'
 import { validateCatalogSearch } from '../features/catalog/types/catalogSearch'
 
@@ -84,24 +86,14 @@ const checkoutRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/checkout',
   beforeLoad: requireSession,
-  component: () => (
-    <section className="rounded-2xl border border-white/10 bg-[#241612] p-8 text-[#F5F1EB]">
-      <h1 className="text-3xl font-semibold">Pagamento</h1>
-      <p className="mt-3 text-[#CFB28C]">Página provisória em construção.</p>
-    </section>
-  ),
+  component: CheckoutPage,
 })
 
 const orderConfirmationRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/orders/$orderId/confirmation',
   beforeLoad: requireSession,
-  component: () => (
-    <section className="rounded-2xl border border-white/10 bg-[#241612] p-8 text-[#F5F1EB]">
-      <h1 className="text-3xl font-semibold">Confirmação de pedido</h1>
-      <p className="mt-3 text-[#CFB28C]">Página provisória em construção.</p>
-    </section>
-  ),
+  component: OrderConfirmationPage,
 })
 
 const profileRoute = createRoute({

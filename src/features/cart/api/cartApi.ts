@@ -36,3 +36,7 @@ export async function removeCartCoupon() {
 export async function mergeGuestCart(items: CartLineInput[], mergeId: string) {
   return (await http.post<CartMergeResult>('/cart/merge', { items, mergeId })).data
 }
+
+export async function consumeOrderItems(orderId: string) {
+  return (await http.post<{ cart: CartState; removedQuantities: CartLineInput[] }>('/cart/consume-order', { orderId })).data
+}

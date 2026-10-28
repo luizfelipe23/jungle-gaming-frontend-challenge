@@ -6,6 +6,7 @@ import { guestCartStorageKey, normalizeCartState, userCartStoragePrefix, writeGu
 import type { CartApiError, CartLine, CartLineInput, CartMergeResult, CartQuote, CartQuoteItem, CartState } from '../../features/cart/types/cart'
 import type { MockSessionRecord } from '../../features/auth/types/session'
 import { mockSessionsStorageKey } from '../../features/auth/types/session'
+import { defaultCheckoutScenario, readCheckoutScenario, readOrders, writeCheckoutScenario } from '../data/orderStore'
 
 const couponOffers = {
   KURIO10: { discountBasisPoints: 1_000, validUntil: '2099-12-31T23:59:59.000Z' },
@@ -26,7 +27,7 @@ function requestToken(request: Request) {
   return authorization?.startsWith('Bearer ') ? authorization.slice(7) : null
 }
 
-function ownerId(request: Request): { id: string | null; invalidSession: boolean } {
+export function ownerId(request: Request): { id: string | null; invalidSession: boolean } {
   const token = requestToken(request)
   if (!token) return { id: null, invalidSession: false }
   const session = readArray<MockSessionRecord>(mockSessionsStorageKey).find((item) => item.token === token && item.expiresAt > Date.now())
@@ -131,7 +132,7 @@ function encodeItemId(nftId: string, editionId: string | null) {
   return `${encodeURIComponent(nftId)}::${encodeURIComponent(editionId ?? 'default')}`
 }
 
-function makeQuote(cart: CartState): CartQuote {
+export function makeQuote(cart: CartState): CartQuote {
   const couponCode = cart.couponCode?.toUpperCase() as keyof typeof couponOffers | undefined
   const couponOffer = couponCode ? couponOffers[couponCode] : undefined
   const coupon = couponOffer && Date.parse(couponOffer.validUntil) > Date.now()
@@ -158,7 +159,8 @@ function makeQuote(cart: CartState): CartQuote {
     const subtotal = addDecimals(...currencyItems.map((item) => item.lineTotal))
     const fractionDigits = currency === 'ETH' ? 18 : 2
     const discount = coupon ? percentageOf(subtotal, coupon.discountBasisPoints, fractionDigits) : '0'
-    const networkFee = currencyItems.length > 0 ? (currency === 'ETH' ? '0.005' : '0.50') : '0'
+    const scenario = readCheckoutScenario()
+    const networkFee = currencyItems.length > 0 ? scenario.fees[currency] ?? (currency === 'ETH' ? '0.005' : '0.50') : '0'
     const total = addDecimals(subtractDecimals(subtotal, discount), networkFee)
     return { currency, subtotal, discount, networkFee, total }
   })
@@ -175,7 +177,7 @@ function makeQuote(cart: CartState): CartQuote {
   }
 }
 
-async function getOwnedCart(request: Request): Promise<CartState | Response> {
+export async function getOwnedCart(request: Request): Promise<CartState | Response> {
   try {
     return readCart(request)
   } catch {
@@ -192,6 +194,15 @@ async function saveOwnedCart(request: Request, cart: CartState): Promise<CartSta
 }
 
 export const cartHandlers = [
+  http.post('/api/dev/scenarios/checkout', async ({ request }) => {
+    const body = await request.json().catch(() => null) as Partial<typeof defaultCheckoutScenario> | null
+    if (!body) return failure('TEMPORARY_FAILURE', 'Cenário inválido.', 400)
+    const scenario = { ...defaultCheckoutScenario, ...body }
+    if (!['pending', 'confirmed', 'declined'].includes(scenario.orderResult)) return failure('TEMPORARY_FAILURE', 'Resultado de pedido inválido.', 400)
+    writeCheckoutScenario(scenario)
+    return HttpResponse.json(scenario)
+  }),
+
   http.get('/api/cart', async ({ request }) => {
     const cart = await getOwnedCart(request)
     return cart instanceof Response ? cart : HttpResponse.json(cart)
@@ -270,7 +281,43 @@ export const cartHandlers = [
   http.post('/api/cart/quote', async ({ request }) => {
     const cart = await getOwnedCart(request)
     if (cart instanceof Response) return cart
+    const scenario = readCheckoutScenario()
+    if (cart.couponCode && scenario.expireCoupon) return failure('COUPON_EXPIRED', 'O cupom expirou durante o checkout. Remova-o para atualizar a cotação.', 422)
     return HttpResponse.json(makeQuote(cart))
+  }),
+
+  http.post('/api/cart/consume-order', async ({ request }) => {
+    const owner = ownerId(request)
+    if (owner.invalidSession) return authRequired()
+    if (!owner.id) return authRequired()
+    const body = await request.json().catch(() => null) as { orderId?: unknown } | null
+    const orderId = typeof body?.orderId === 'string' ? body.orderId : ''
+    const order = readOrders(owner.id).find((candidate) => candidate.id === orderId)
+    if (!order) return failure('NOT_FOUND', 'Pedido não encontrado.', 404)
+    if (order.status !== 'confirmed') return failure('TEMPORARY_FAILURE', 'O carrinho será atualizado depois da confirmação do pedido.', 409)
+
+    const markerKey = `frontend-challenge:mock-cart:consumed-orders:${owner.id}:v1`
+    const consumedIds = readArray<string>(markerKey)
+    const cart = await getOwnedCart(request)
+    if (cart instanceof Response) return cart
+    if (consumedIds.includes(order.id)) return HttpResponse.json({ cart, removedQuantities: [] })
+
+    const removedQuantities: Array<{ nftId: string; editionId: string | null; quantity: number }> = []
+    const remaining = [...cart.items]
+    for (const purchased of order.items) {
+      const index = remaining.findIndex((line) => line.itemId === purchased.itemId)
+      if (index < 0) continue
+      const current = remaining[index]
+      const removed = Math.min(current.quantity, purchased.quantity)
+      if (removed <= 0) continue
+      removedQuantities.push({ nftId: current.nftId, editionId: current.editionId, quantity: removed })
+      if (current.quantity === removed) remaining.splice(index, 1)
+      else remaining[index] = { ...current, quantity: current.quantity - removed }
+    }
+    const saved = await saveOwnedCart(request, { ...cart, items: remaining, couponCode: remaining.length ? cart.couponCode : null })
+    if (saved instanceof Response) return saved
+    window.localStorage.setItem(markerKey, JSON.stringify([...consumedIds.slice(-99), order.id]))
+    return HttpResponse.json({ cart: saved, removedQuantities })
   }),
 
   http.post('/api/cart/merge', async ({ request }) => {

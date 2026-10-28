@@ -147,7 +147,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!cart.items.length || import.meta.env.MODE === 'test') return
-    realtimeClient.connect()
     const unsubscribe = realtimeClient.onEvent<{ price: string; status: Nft['status']; availableQuantity: number }>('nft.updated', (event: RealtimeUpdateEvent<{ price: string; status: Nft['status']; availableQuantity: number }>) => {
       const previousVersion = lastVersionsRef.current.get(event.resourceId) ?? 0
       if (event.version <= previousVersion) return
@@ -160,7 +159,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     })
     return () => {
       unsubscribe()
-      realtimeClient.disconnect()
     }
   }, [cart.items.length, cartQuery.data, ownerKey, queryClient])
 

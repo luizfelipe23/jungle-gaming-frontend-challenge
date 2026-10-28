@@ -18,7 +18,7 @@ export function SessionExpiryHandler() {
       handling = true
       const currentLocation = router.state.location.href
       clearPrivateSession(queryClient)
-      void router.navigate({ to: '/login', search: { returnTo: safeReturnTo(currentLocation) }, replace: true }).finally(reset)
+      void router.navigate({ to: '/login', search: { returnTo: safeReturnTo(currentLocation), sessionError: true }, replace: true }).finally(reset)
     }
 
     window.addEventListener(sessionExpiredEvent, handleExpiredSession)

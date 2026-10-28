@@ -74,7 +74,7 @@ Para validar o fluxo sem backend, o Playwright inicia o servidor Socket.IO de te
 - NFT prices and quote values are decimal strings. `lib/money.ts` uses fixed scale `BigInt` arithmetic; ETH is represented to 18 decimal places and USD discounts are rounded to cents. Currency totals remain separate.
 - Quotes contain current item prices, accepted quantities, subtotal, discount, network fee, total, currency, cart version and expiry. Failed or stale quotes block the checkout link without deleting items.
 - The app uses `socket.io-client` for versioned `nft.updated` events. Price/inventory events invalidate NFT and quote queries. Playwright starts `scripts/mock-realtime-server.mjs` beside Vite through `scripts/e2e-server.mjs`; the MSW scenario endpoint mutates the fixture and the E2E emits the returned event through the local Socket.IO server.
-- `/cart` supports quantity controls, editions, removal/clear, coupons, quote retry, inventory errors, responsive totals and catalog navigation. `/checkout` remains a protected placeholder.
+- `/cart` supports quantity controls, editions, removal/clear, coupons, quote retry, inventory errors, responsive totals and catalog navigation. `/checkout` is protected and validates a fresh quote before order creation.
 
 ## Autenticação simulada
 
@@ -89,6 +89,17 @@ Para validar o fluxo sem backend, o Playwright inicia o servidor Socket.IO de te
 ## Simplificações desta etapa
 - O catálogo inicial implementa busca, filtros, ordenação e paginação no cliente, com o estado persistido nos parâmetros da URL.
 - Os filtros usam apenas campos já definidos no tipo `Nft`: status, coleção, raridade, moeda e preço.
-- Carrinho, autenticação, catálogo e detalhes são funcionais com MSW; checkout, perfil e demais telas seguem como placeholders.
+- Checkout e pedidos agora estao implementados sobre as APIs MSW e a infraestrutura existente.
 - O design system foi inicializado com tokens essenciais e UI mínima reutilizável.
 - A arquitetura prioriza clareza e evolutividade em vez de abstrações desnecessárias.
+
+## Checkout e ciclo de vida dos pedidos
+
+- `features/checkout` owns collector validation, wallet/network selection, simulated wallet connection, quote review and idempotent submission. `features/orders/api/ordersApi.ts` uses the shared Axios client for wallet and order REST calls.
+- The UI requests a fresh cart quote before submission. It compares a stable fingerprint of accepted items, quantities, prices, coupon, fees and totals. Any changed quote requires separate user confirmation; unavailable quantities block submission. The order handler calculates its immutable receipt snapshot from its own fresh quote rather than trusting client totals.
+- `POST /api/orders` accepts an `Idempotency-Key`. The mock stores the request fingerprint and order per user. The same key and body return the same order; a different body conflicts. The checkout attempt is persisted per user so timeout and refresh recovery reuse the original key via `GET /api/orders/attempts/:key`.
+- `GET /api/orders/:orderId` is the source of truth after navigation, refresh or reconnect. Order state is `pending`, `confirmed` or `declined`; only a pending order can transition to a terminal state. The confirmation page polls while pending and invalidates its query on versioned `order.updated` Socket.IO events.
+- Receipt items and totals are stored in the order snapshot, including NFT/edition labels, quantities, unit/line prices, discounts, network fees and currency totals. Later catalog edits do not alter the receipt.
+- Cart consumption happens only after REST reports `confirmed`. The API removes only quantities present in that order from the current cart, preserves later/additional lines, and tracks consumed order IDs so a refresh does not consume twice. Pending, declined and unknown outcomes preserve the cart.
+- MSW scenario storage supports pending/confirmed/declined outcomes, changed fees, expired coupons, wallet rejection/disconnect, transient errors, timeout after persistence, session expiry and lookup failure. Browser E2E tests configure deterministic values in the same local storage read by handlers.
+- This is a browser simulation: `localStorage` cannot provide durable cross-device idempotency, database transactions, atomic stock reservation, authorization guarantees or payment settlement. A production service must own those guarantees server-side.

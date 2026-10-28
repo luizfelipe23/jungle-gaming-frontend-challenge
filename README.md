@@ -1,4 +1,4 @@
-# Frontend Challenge
+﻿# Frontend Challenge
 
 Aplicação inicial do Frontend Challenge, construída com React, TypeScript e Vite. O ambiente de desenvolvimento usa Node 24 Alpine; os testes E2E usam uma imagem oficial do Playwright com navegador e dependências do sistema já instalados.
 
@@ -22,7 +22,7 @@ Preços ETH trafegam como strings decimais e são somados, multiplicados e desco
 
 Após login, `POST /api/cart/merge` consolida o carrinho de visitante com o carrinho associado ao usuário e limita quantidades ao estoque atual. Problemas parciais aparecem como aviso. Só depois da confirmação da API a chave de visitante é removida. Carrinhos simulados de usuários ficam isolados por identidade; logout e expiração mantêm a chave visitante intacta.
 
-Enquanto há itens no carrinho, o cliente Socket.IO recebe eventos `nft.updated`. Nos testes E2E, um servidor Socket.IO de suporte inicia junto com o Vite e encerra com ele; o MSW altera preço/estoque e o teste emite o evento pelo servidor para verificar a atualização da cotação e o bloqueio do checkout. O checkout continua protegido e é apenas placeholder.
+O checkout continua protegido e agora cria pedidos simulados com revalidacao obrigatoria da cotacao.
 
 ## Autenticacao simulada
 
@@ -76,3 +76,15 @@ docker compose run --rm app npm test
 ```
 
 Consulte [docs/e2e-docker.md](docs/e2e-docker.md) para detalhes sobre a configuração E2E e a atualização das versões compatíveis.
+
+## Checkout e pedidos
+
+O checkout em `/checkout` exige sessao e usa as carteiras ficticias devolvidas por `GET /api/wallets`. A conexao e a desconexao sao simuladas pela API. Antes de criar o pedido, a pagina solicita uma nova cotacao do carrinho e exige aceite explicito quando preco, disponibilidade, desconto ou taxa diferem da revisao apresentada. Valores no recibo sao calculados no mock a partir dessa cotacao; ETH permanece como string decimal.
+
+`POST /api/orders` recebe os dados do colecionador, carteira/rede, conexao e revisao da cotacao. O cliente envia `Idempotency-Key`: a mesma chave e o mesmo conteudo retornam o mesmo pedido, enquanto conteudo diferente retorna conflito. Tentativas ficam salvas por usuario para recuperacao por `GET /api/orders/attempts/:key` depois de timeout ou refresh. `GET /api/orders/:orderId` e a fonte de recuperacao do estado.
+
+Pedidos podem estar `pending`, `confirmed` ou `declined`; apenas pedidos pendentes podem transitar para um estado terminal. A confirmacao exibe os dados fotografados no pedido, inclusive itens, edicoes, quantidades, precos, descontos, taxas e totais. O snapshot nao depende do catalogo atual. O carrinho so e atualizado apos confirmacao e apenas as quantidades registradas no pedido sao consumidas; a operacao e idempotente por pedido.
+
+Enquanto pendente, a tela consulta a API e invalida a consulta quando recebe `order.updated` via Socket.IO. A API REST recupera o pedido apos refresh/reconexao. Falha de comunicacao nao e tratada como recusa. No mock, pedidos e tentativas ficam em `localStorage` por usuario; isso permite exercitar o fluxo no navegador, mas nao substitui transacoes, idempotencia duravel ou controle concorrente de um backend real.
+
+Para executar os cenarios de checkout, use `docker compose run --rm e2e`. A suite cobre confirmacao, recusa, pendencia, mudanca de cotacao, estoque, cupom expirado, taxas, carteira, falhas transitorias, timeout, recuperacao e expiracao de sessao.
