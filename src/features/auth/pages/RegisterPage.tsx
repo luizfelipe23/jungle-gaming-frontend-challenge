@@ -4,8 +4,8 @@ import { AuthCard } from '../components/AuthCard'
 import { RegisterForm } from '../components/RegisterForm'
 
 export function RegisterPage() {
-  return <AuthCard eyebrow="Faça parte da comunidade" title="Criar sua conta" description="Cadastre-se para acompanhar suas obras e acessar sua conta.">
+  return <AuthCard eyebrow="Faça parte da comunidade" title="Criar perfil de colecionador" description="Crie seu perfil de colecionador e conecte uma carteira quando quiser.">
     <RegisterForm />
-    <div className="text-center"><Link to="/" className="text-xs text-[#CFB28C] hover:text-[#E89B55]">Voltar ao catálogo</Link></div>
+    <div className="hidden text-center lg:block"><Link to="/" className="text-xs text-[#CFB28C] hover:text-[#E89B55]">Voltar ao catálogo</Link></div>
   </AuthCard>
 }

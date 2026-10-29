@@ -4,46 +4,45 @@ import { useState } from 'react'
 import type { Nft } from '../../../types/nft'
 import { formatDecimal } from '../../../lib/money'
 
-type CatalogHeroProps = { featuredNft?: Nft }
+type CatalogHeroProps = { featuredNft?: Nft; secondaryNft?: Nft }
 
-export function CatalogHero({ featuredNft }: CatalogHeroProps) {
+export function CatalogHero({ featuredNft, secondaryNft }: CatalogHeroProps) {
   const [imageUnavailable, setImageUnavailable] = useState(false)
   return (
     <section
       id="inicio"
       aria-labelledby="hero-title"
-      className="relative isolate grid min-h-[430px] overflow-hidden rounded-2xl border border-[#55321F] bg-[linear-gradient(115deg,#241612_0%,#1b110d_50%,#140d0a_100%)] md:grid-cols-[1fr_0.9fr]"
+      className="relative grid h-[190px] grid-cols-1 items-center overflow-hidden rounded-[28px] bg-gradient-to-br from-[#4a2a19] via-[#3b2418] to-[#241612] px-4 md:grid-cols-[minmax(0,1fr)_minmax(320px,0.9fr)] md:px-0"
     >
-      <div className="pointer-events-none absolute -left-24 -top-32 -z-10 h-80 w-80 rounded-full bg-[#D28A4C]/10 blur-3xl" />
-      <div className="flex flex-col items-start justify-center gap-7 px-6 py-10 sm:px-10 md:px-12">
-        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#CFB28C]">
-          <span className="h-px w-7 bg-[#D28A4C]" /> Bem-vindo à Kurio
+      <div className="relative z-10 flex max-w-[190px] flex-col items-start justify-center gap-2">
+        <p className="text-[12px] font-medium leading-4 text-[#F5F1EB]">
+          Bem-vindo à Kurio
         </p>
-        <div className="space-y-4">
-          <h1 id="hero-title" className="max-w-xl text-3xl font-bold uppercase leading-tight text-[#F5F1EB] sm:text-4xl lg:text-[43px]">
-            Own the future of digital art
+        <div className="space-y-1">
+          <h1 id="hero-title" className="max-w-[190px] text-[18px] font-bold uppercase leading-[29px] text-[#F5F1EB]">
+            Seja dono da cultura digital
           </h1>
-          <p className="max-w-lg text-sm leading-7 text-[#CFB28C]">
-            Descubra NFTs selecionados de criadores do mundo todo. Encontre sua próxima peça favorita.
+          <p className="max-w-[190px] text-[12px] leading-[18px] text-[#CFB28C]">
+            Descubra NFTs selecionados de criadores do mundo todo.
           </p>
         </div>
         <a
           href="#catalogo"
-          className="inline-flex min-h-11 items-center gap-3 rounded-md bg-[#D28A4C] px-6 font-bold text-[#140D0A] transition hover:bg-[#E89B55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F5F1EB] focus-visible:ring-offset-2 focus-visible:ring-offset-[#140D0A]"
+          style={{ color: '#E89B55' }}
+          className="inline-flex min-h-4 items-center gap-2 text-xs font-bold uppercase text-[#E89B55] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F5F1EB]"
         >
           Explorar <ArrowDownRight aria-hidden="true" className="h-4 w-4" />
         </a>
       </div>
 
-      <div className="relative flex min-h-[260px] items-center justify-center px-6 pb-8 md:min-h-full md:px-10 md:py-10">
-        <div className="absolute right-10 top-5 h-48 w-48 rounded-full border border-[#D28A4C]/20 md:right-16 md:top-10 md:h-72 md:w-72" />
-        <div className="absolute right-16 top-11 h-36 w-36 rounded-full border border-[#D28A4C]/10 md:right-24 md:top-20 md:h-56 md:w-56" />
-        <div className="relative z-10 w-full max-w-[300px] rotate-2 rounded-xl border border-[#D28A4C]/30 bg-[#241612]/90 p-3 shadow-2xl shadow-black/50 md:ml-8">
+      <div className="absolute inset-y-0 right-3 flex w-[138px] items-start justify-center pt-2 md:relative md:inset-auto md:flex md:min-h-full md:w-auto md:items-center md:pt-0">
+        <div className="relative z-10 w-[138px] overflow-visible md:ml-auto md:w-full md:max-w-[360px] md:overflow-hidden md:rounded-2xl md:bg-[#241612]">
           {featuredNft?.imageUrl && !imageUnavailable ? (
             <img
               src={featuredNft.imageUrl}
               alt={`Arte de ${featuredNft.name}`}
-              className="aspect-[4/3] w-full rounded-lg object-cover"
+              className="aspect-square w-full rounded-2xl object-cover md:rounded-none"
+              fetchPriority="high"
               onError={() => setImageUnavailable(true)}
             />
           ) : (
@@ -51,7 +50,7 @@ export function CatalogHero({ featuredNft }: CatalogHeroProps) {
               Imagem indisponível
             </div>
           )}
-          <div className="flex items-center justify-between gap-3 px-1 pt-3">
+          <div className="hidden items-center justify-between gap-3 px-1 pt-3 md:flex">
             <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-[0.18em] text-[#CFB28C]">NFT em destaque</p>
               <p className="mt-1 truncate text-sm font-semibold text-[#F5F1EB]">Novas obras toda semana</p>
@@ -63,10 +62,10 @@ export function CatalogHero({ featuredNft }: CatalogHeroProps) {
             )}
           </div>
         </div>
-        <span className="absolute bottom-8 right-8 flex h-10 w-10 items-center justify-center rounded-full border border-[#D28A4C]/40 bg-[#140D0A] text-[#E89B55] md:bottom-12 md:right-14">
-          <ArrowUpRight aria-hidden="true" className="h-5 w-5" />
-        </span>
+        {secondaryNft?.imageUrl && <img src={secondaryNft.imageUrl} alt="" className="absolute -bottom-1 left-[14px] z-20 h-[58px] w-[58px] rounded-2xl border-2 border-[#2F1D15] object-cover md:hidden" />}
+        <span className="absolute bottom-8 right-8 hidden h-10 w-10 items-center justify-center rounded-full border border-[#D28A4C]/40 bg-[#140D0A] text-[#E89B55] md:flex"><ArrowUpRight aria-hidden="true" className="h-5 w-5" /></span>
       </div>
+      <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 gap-1.5 text-[8px] text-[#D28A4C]"><span>●</span><span>●</span><span>●</span></div>
     </section>
   )
 }

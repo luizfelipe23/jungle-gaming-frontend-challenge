@@ -18,9 +18,9 @@ export function CatalogSearchInput({ value, onChange, id = 'catalog-search' }: C
         type="search"
         value={value}
         onChange={(event) => onChange(event.currentTarget.value)}
-        placeholder="Buscar NFTs, coleções..."
+        placeholder="Explorar coleções"
         autoComplete="off"
-        className="h-11 rounded-lg border-[#55321F] bg-[#241612] pl-10 placeholder:text-[#B39483]"
+        className="h-[45px] rounded-[10px] border-[#241612] bg-[#241612] pl-10 text-sm font-bold placeholder:text-[#B39463]"
       />
     </label>
   )

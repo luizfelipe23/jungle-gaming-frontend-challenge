@@ -7,10 +7,11 @@ import { Button } from '../../../components/ui/button'
 import { Card } from '../../../components/ui/card'
 import { Skeleton } from '../../../components/ui/skeleton'
 import { useCart } from '../../cart/useCart'
-import { useNft } from '../hooks/useNfts'
+import { useNft, useNfts } from '../hooks/useNfts'
 import type { Nft } from '../../../types/nft'
 import { formatDecimal } from '../../../lib/money'
 import { FavoriteButton } from '../components/FavoriteButton'
+import { Minus, Plus } from 'lucide-react'
 
 const statusLabels: Record<Nft['status'], string> = {
   available: 'Disponível',
@@ -25,6 +26,7 @@ function formatPrice(nft: Nft) {
 export function NftDetailsPage() {
   const { nftId } = useParams({ from: '/app/nft/$nftId' })
   const { data: nft, isLoading, isError, error, refetch } = useNft(nftId)
+  const { data: catalogNfts = [] } = useNfts()
   const { items, addItem, isSaving, errorMessage } = useCart()
   const [imageUnavailableFor, setImageUnavailableFor] = useState<string | null>(null)
   const [selectedEditionId, setSelectedEditionId] = useState<string | null>(null)
@@ -69,13 +71,37 @@ export function NftDetailsPage() {
     }
   }
 
-  return <article className="mx-auto max-w-[1120px]">
-    <Link to="/" className="mb-6 inline-flex min-h-10 items-center gap-2 text-xs text-[#CFB28C] transition hover:text-[#E89B55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E89B55]"><ArrowLeft aria-hidden="true" className="h-4 w-4" />Voltar ao catálogo</Link>
+  return <>
+  <div className="lg:hidden">
+    <header className="relative h-[506px] bg-gradient-to-br from-[#241612] to-[#2F1D15]">
+      <Link to="/" aria-label="Voltar" className="absolute left-7 top-6 z-20 flex h-[35px] w-[35px] items-center justify-center rounded-full border border-[#3F2319] bg-[#2F1D15] text-[#B39463]"><ArrowLeft className="h-4 w-4"/></Link>
+      <FavoriteButton nftId={nft.id} nftName={nft.name} compact className="absolute right-7 top-6 z-20 h-[35px] w-[35px] rounded-full border border-[#3F2319] bg-[#2F1D15] p-0 text-[#E89B55]" />
+      <div className="absolute left-7 right-7 top-[66px] overflow-hidden rounded-[24px] bg-[#241612]"><img src={nft.imageUrl} alt={nft.name} onError={() => setImageUnavailableFor(nft.id)} className="aspect-square w-full object-cover"/></div>
+      <div className="absolute bottom-[132px] left-1/2 flex -translate-x-1/2 gap-2 text-[8px] text-[#D28A4C]"><span>○</span><span>●</span><span>○</span><span>○</span></div>
+    </header>
+    <section className="relative z-10 -mt-[114px] min-h-[350px] rounded-t-[28px] bg-[#140D0A] px-6 pb-36 pt-7">
+      <div className="flex items-center justify-between gap-3"><h1 className="text-[18px] font-bold">{nft.name}</h1><span className="rounded-full border border-[#D28A4C] px-2 py-1 text-xs text-[#F5F1EB]">★ 4.8 <span className="text-[#B39463]">(19)</span></span></div>
+      <p className="mt-3 text-sm leading-6 text-[#CFB28C]">{nft.description}</p>
+      <h2 className="mt-3 text-sm font-bold">Edição:</h2>
+      <div className="mt-2 flex flex-wrap gap-2">{(nft.editions ?? []).map((edition) => <button key={edition.id} type="button" onClick={() => { setSelectedEditionId(edition.id); setQuantity(1); setAdded(false) }} className={`rounded-full border px-2 py-1 text-xs ${selectedVariantId === edition.id ? 'border-[#E89B55] text-[#E89B55]' : 'border-[#3F2319] text-[#B39463]'}`}>{edition.name}</button>)}<span className="rounded-full border border-[#3F2319] px-2 py-1 text-xs text-[#B39463]">ABERTA</span></div>
+      {nft.tokenId && <p className="mt-3 text-sm text-[#B39463]">ID do token: #{nft.tokenId}</p>}
+      <p className="mt-2 text-sm text-[#B39463]">Coleção: {nft.collection}</p>
+      <p className="mt-2 text-sm text-[#B39463]">Atributos: {nft.attributes?.map((attribute) => attribute.value).join(', ') || nft.rarity}</p>
+      {cartError && <p role="alert" className="mt-2 text-xs text-red-200">{cartError}</p>}{added && <p role="status" className="mt-2 text-xs text-[#E89B55]">Adicionado ao carrinho.</p>}
+    </section>
+    <div className="fixed inset-x-0 bottom-0 z-30 rounded-t-[30px] bg-[#1b100d] px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5 shadow-[0_-8px_24px_rgba(10,6,4,.35)]">
+      <div className="mb-4 flex items-center justify-between"><div className="flex items-center gap-2 text-sm text-[#CFB28C]">Qtd. <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="rounded-full bg-[#D28A4C] p-1 text-[#140D0A]"><Minus className="h-4 w-4"/></button><span className="w-4 text-center text-[#F5F1EB]">{quantity}</span><button type="button" onClick={() => setQuantity(Math.min(maximumQuantity, quantity + 1))} className="rounded-full bg-[#D28A4C] p-1 text-[#140D0A]"><Plus className="h-4 w-4"/></button></div><strong className="text-lg text-[#E89B55]">{formatPrice(displayedPrice)}</strong></div>
+      <div className="flex gap-3"><Button type="button" disabled={!canAddToCart || isSaving} onClick={() => void addSelectedEdition()} className="h-[60px] flex-1 rounded-full text-sm font-bold">{isSaving ? 'Adicionando…' : 'Comprar NFT'}</Button><Link to="/cart" aria-label="Abrir carrinho" className="flex h-[60px] w-[60px] items-center justify-center rounded-full border border-[#3F2319] bg-[#241612] text-[#D28A4C]"><ShoppingBag className="h-5 w-5"/></Link></div>
+    </div>
+  </div>
+  <article className="mx-auto hidden max-w-[1200px] lg:block">
+    <nav aria-label="Breadcrumb" className="mb-3 hidden text-sm font-bold lg:block"><Link to="/" className="hover:text-[#E89B55]">Início</Link><span className="px-2">/</span><Link to="/" className="hover:text-[#E89B55]">Mercado</Link></nav>
+    <Link to="/" className="mb-6 inline-flex min-h-10 items-center gap-2 text-xs text-[#CFB28C] transition hover:text-[#E89B55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E89B55] lg:hidden"><ArrowLeft aria-hidden="true" className="h-4 w-4" />Voltar ao catálogo</Link>
 
     <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] lg:gap-12">
       <div className="overflow-hidden rounded-2xl border border-[#55321F] bg-[#241612]">
         <div className="relative aspect-square bg-[#100a08]">
-          {nft.imageUrl && imageUnavailableFor !== nft.id ? <img src={nft.imageUrl} alt={`Arte de ${nft.name}`} onError={() => setImageUnavailableFor(nft.id)} className="h-full w-full object-cover" /> : <div role="img" aria-label={`Imagem de ${nft.name} indisponível`} className="flex h-full flex-col items-center justify-center gap-3 text-[#CFB28C]"><ImageOff aria-hidden="true" className="h-10 w-10" /><span className="text-xs uppercase tracking-[0.16em]">Imagem indisponível</span></div>}
+          {nft.imageUrl && imageUnavailableFor !== nft.id ? <img src={nft.imageUrl} alt={`Arte de ${nft.name}`} onError={() => setImageUnavailableFor(nft.id)} fetchPriority="high" className="h-full w-full object-cover" /> : <div role="img" aria-label={`Imagem de ${nft.name} indisponível`} className="flex h-full flex-col items-center justify-center gap-3 text-[#CFB28C]"><ImageOff aria-hidden="true" className="h-10 w-10" /><span className="text-xs uppercase tracking-[0.16em]">Imagem indisponível</span></div>}
           <span className="absolute left-4 top-4 rounded-full border border-white/10 bg-[#140D0A]/85 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#E89B55]">{nft.rarity}</span>
         </div>
       </div>
@@ -132,5 +158,14 @@ export function NftDetailsPage() {
         <p className="text-[10px] text-[#8F7162]">Adicionado em {new Date(nft.createdAt).toLocaleDateString('pt-BR')}</p>
       </div>
     </div>
+    <section className="mt-16 hidden lg:block">
+      <div className="border-b border-[#55321F] pb-3 text-[15px] font-bold text-[#E89B55]">Detalhes do NFT <span className="ml-8 text-[#F5F1EB]">Avaliações de colecionadores (19)</span></div>
+      <div className="space-y-5 py-4 text-[13px] leading-6 text-[#CFB28C]"><p>{nft.name} é uma obra digital finalizada à mão da coleção {nft.collection}. Cada atributo fica armazenado nos metadados do token e verificado na rede. A obra explora identidade, movimento e luz em um mundo digital sem fronteiras.</p><p>A propriedade inclui a arte em alta resolução, lançamentos exclusivos para colecionadores e um registro permanente de procedência registrada na rede. Direitos autorais de 5% nas vendas secundárias apoiam novos trabalhos.</p><p><strong className="text-[#F5F1EB]">Rede:</strong><br/>Cunhado com procedência imutável e metadados armazenados no IPFS.</p><p><strong className="text-[#F5F1EB]">Contrato:</strong><br/>Direitos autorais do criador: 5% nas vendas secundárias.</p></div>
+      <h2 className="mt-16 border-b border-[#55321F] pb-3 text-[15px] font-bold text-[#E89B55]">Mais desta coleção</h2>
+      <div className="mt-7 grid grid-cols-5 gap-5">{catalogNfts.filter((item) => item.id !== nft.id).slice(0, 5).map((item) => <Link key={item.id} to="/nft/$nftId" params={{ nftId: item.id }} className="block"><div className="bg-[#241612] p-2"><img src={item.imageUrl} alt={item.name} className="aspect-square w-full rounded-xl object-cover"/></div><p className="mt-2 truncate text-sm">{item.name}</p><p className="font-bold text-[#E89B55]">{formatDecimal(item.price, item.currency === 'ETH' ? 8 : 2)} {item.currency}</p></Link>)}</div>
+      <div className="mt-3 flex justify-center gap-2 text-[#D28A4C]"><span>○</span><span>●</span><span>○</span></div>
+    </section>
   </article>
+  </>
 }
+

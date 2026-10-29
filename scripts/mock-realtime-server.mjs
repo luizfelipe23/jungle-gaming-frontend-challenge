@@ -1,5 +1,5 @@
 import { createServer } from 'node:http'
-import { Server } from 'socket.io'
+import { createRealtimeServer, emitRealtimeEvent } from './realtime-server.mjs'
 
 const httpServer = createServer((request, response) => {
   response.setHeader('Access-Control-Allow-Origin', '*')
@@ -17,6 +17,14 @@ const httpServer = createServer((request, response) => {
     return
   }
 
+  if (request.method === 'POST' && request.url === '/__test__/drop-connections') {
+    const dropped = io.sockets.sockets.size
+    for (const socket of io.sockets.sockets.values()) socket.conn.close()
+    response.writeHead(200, { 'Content-Type': 'application/json' })
+    response.end(JSON.stringify({ dropped }))
+    return
+  }
+
   if (request.method === 'POST' && request.url === '/__test__/emit') {
     let body = ''
     request.setEncoding('utf8')
@@ -24,11 +32,10 @@ const httpServer = createServer((request, response) => {
     request.on('end', () => {
       try {
         const { event } = JSON.parse(body)
-        if (!['nft.updated', 'order.updated'].includes(event?.type) || typeof event.resourceId !== 'string' || !Number.isSafeInteger(event.version)) {
+        if (!emitRealtimeEvent(io, event)) {
           response.writeHead(400).end('Invalid event')
           return
         }
-        io.emit(event.type, event)
         response.writeHead(200, { 'Content-Type': 'application/json' })
         response.end(JSON.stringify({ delivered: io.engine.clientsCount }))
       } catch {
@@ -41,10 +48,7 @@ const httpServer = createServer((request, response) => {
   response.writeHead(404).end('Not found')
 })
 
-const io = new Server(httpServer, { cors: { origin: '*' } })
-io.on('connection', (socket) => {
-  console.log(`[realtime] Socket.IO client connected: ${socket.id}`)
-})
+const io = createRealtimeServer(httpServer, { cors: { origin: '*' } })
 
 httpServer.listen(3001, '0.0.0.0', () => console.log('[realtime] Mock Socket.IO server listening on :3001'))
 

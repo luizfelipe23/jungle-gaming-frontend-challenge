@@ -206,7 +206,7 @@ export const orderHandlers = [
       const updated = transitionOrder(orders[index], nextStatus)
       orders[index] = updated
       saveOrders(owner.id!, orders)
-      return HttpResponse.json({ order: updated, event: { type: 'order.updated', resourceId: updated.id, version: updated.version, updatedAt: updated.updatedAt, payload: { status: updated.status } } })
+      return HttpResponse.json({ order: updated, event: { type: 'order.updated', resourceId: updated.id, scopeId: owner.id, version: updated.version, updatedAt: updated.updatedAt, payload: { status: updated.status } } })
     })
   }),
 ]

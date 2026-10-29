@@ -31,6 +31,20 @@ services:
     command: >-
       sh -lc "npm ci && npm run test:e2e"
 
+  lighthouse:
+    image: mcr.microsoft.com/playwright:v1.64.1-jammy
+    working_dir: /workspace
+    environment:
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+      VITE_API_BASE_URL: http://127.0.0.1:4174/api
+      VITE_SOCKET_URL: http://127.0.0.1:3001
+    volumes:
+      - .:/workspace
+      - lighthouse_node_modules:/workspace/node_modules
+    command: >-
+      sh -lc "npm ci && npm run lighthouse:audit"
+
 volumes:
   node_modules:
   e2e_node_modules:
+  lighthouse_node_modules:

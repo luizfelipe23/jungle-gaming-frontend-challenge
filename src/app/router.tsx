@@ -1,17 +1,8 @@
-import { createBrowserHistory, createMemoryHistory, createRootRouteWithContext, createRoute, createRouter, Outlet, redirect } from '@tanstack/react-router'
+import { createBrowserHistory, createMemoryHistory, createRootRouteWithContext, createRoute, createRouter, lazyRouteComponent, Outlet, redirect } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
 
 import { appQueryClient } from './query-client'
 import { AppLayout } from '../components/layout/AppLayout'
-import { CatalogPage } from '../features/catalog/pages/CatalogPage'
-import { NftDetailsPage } from '../features/catalog/pages/NftDetailsPage'
-import { CartPage } from '../features/cart/pages/CartPage'
-import { LoginPage } from '../features/auth/pages/LoginPage'
-import { RegisterPage } from '../features/auth/pages/RegisterPage'
-import { CheckoutPage } from '../features/checkout/pages/CheckoutPage'
-import { OrderConfirmationPage } from '../features/orders/pages/OrderConfirmationPage'
-import { ProfilePage } from '../features/profile/pages/ProfilePage'
-import { WalletsPage } from '../features/wallets/pages/WalletsPage'
 import { sessionQueryOptions } from '../features/auth/hooks/useSession'
 import { validateCatalogSearch } from '../features/catalog/types/catalogSearch'
 
@@ -56,59 +47,59 @@ export const catalogRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/',
   validateSearch: validateCatalogSearch,
-  component: CatalogPage,
+  component: lazyRouteComponent(() => import('../features/catalog/pages/CatalogPage'), 'CatalogPage'),
 })
 
 const nftDetailsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/nft/$nftId',
-  component: NftDetailsPage,
+  component: lazyRouteComponent(() => import('../features/catalog/pages/NftDetailsPage'), 'NftDetailsPage'),
 })
 
 const cartRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/cart',
-  component: CartPage,
+  component: lazyRouteComponent(() => import('../features/cart/pages/CartPage'), 'CartPage'),
 })
 
 const loginRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/login',
   validateSearch: validateLoginSearch,
-  component: LoginPage,
+  component: lazyRouteComponent(() => import('../features/auth/pages/LoginPage'), 'LoginPage'),
 })
 
 const registerRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/register',
-  component: RegisterPage,
+  component: lazyRouteComponent(() => import('../features/auth/pages/RegisterPage'), 'RegisterPage'),
 })
 
 const checkoutRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/checkout',
   beforeLoad: requireSession,
-  component: CheckoutPage,
+  component: lazyRouteComponent(() => import('../features/checkout/pages/CheckoutPage'), 'CheckoutPage'),
 })
 
 const orderConfirmationRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/orders/$orderId/confirmation',
   beforeLoad: requireSession,
-  component: OrderConfirmationPage,
+  component: lazyRouteComponent(() => import('../features/orders/pages/OrderConfirmationPage'), 'OrderConfirmationPage'),
 })
 
 const profileRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/profile',
   beforeLoad: requireSession,
-  component: ProfilePage,
+  component: lazyRouteComponent(() => import('../features/profile/pages/ProfilePage'), 'ProfilePage'),
 })
 const walletsRoute = createRoute({
   getParentRoute: () => appLayoutRoute,
   path: '/wallets',
   beforeLoad: requireSession,
-  component: WalletsPage,
+  component: lazyRouteComponent(() => import('../features/wallets/pages/WalletsPage'), 'WalletsPage'),
 })
 export const routeTree = rootRoute.addChildren([
   appLayoutRoute.addChildren([

@@ -10,6 +10,7 @@ export interface Wallet {
   address: string
   networks: WalletNetwork[]
   nickname?: string
+  secondaryAddress?: string
   walletType?: 'software' | 'hardware'
   profileName?: string
   ensName?: string

@@ -26,15 +26,22 @@ export function OrderConfirmationPage() {
   const { orderId } = useParams({ from: '/app/orders/$orderId/confirmation' })
   const session = useSession()
   const queryClient = useQueryClient()
-  const lastVersion = useRef(0)
+  const lastVersion = useRef({ orderId, version: 0 })
   const consumeStarted = useRef<string | null>(null)
-  const orderQuery = useQuery({
+  const orderQuery = useQuery<Order>({
     queryKey: ['private', session.user?.id, 'orders', orderId],
     queryFn: () => getOrder(orderId),
     enabled: Boolean(session.user),
     retry: false,
     refetchOnWindowFocus: true,
     refetchInterval: (query) => query.state.data?.status === 'pending' ? 2500 : false,
+    structuralSharing: (previous, incoming) => {
+      const previousOrder = previous as Order | undefined
+      const incomingOrder = incoming as Order
+      if (!previousOrder) return incomingOrder
+      if (previousOrder.status !== 'pending') return previousOrder
+      return incomingOrder.version < previousOrder.version ? previousOrder : incomingOrder
+    },
   })
   const consumeMutation = useMutation({
     mutationFn: consumeOrderItems,
@@ -46,13 +53,14 @@ export function OrderConfirmationPage() {
   })
 
   useEffect(() => {
-    if (orderQuery.data) lastVersion.current = Math.max(lastVersion.current, orderQuery.data.version)
-  }, [orderQuery.data])
+    if (lastVersion.current.orderId !== orderId) lastVersion.current = { orderId, version: 0 }
+    if (orderQuery.data) lastVersion.current.version = Math.max(lastVersion.current.version, orderQuery.data.version)
+  }, [orderId, orderQuery.data])
 
   useEffect(() => {
-    const invalidate = (event: { resourceId: string; version: number }) => {
-      if (event.resourceId !== orderId || event.version <= lastVersion.current) return
-      lastVersion.current = event.version
+    const invalidate = (event: { type: string; resourceId: string; scopeId?: string; version: number }) => {
+      if (event.type !== 'order.updated' || event.scopeId !== session.user?.id || event.resourceId !== orderId || !Number.isSafeInteger(event.version) || event.version <= lastVersion.current.version) return
+      lastVersion.current.version = event.version
       void queryClient.invalidateQueries({ queryKey: ['private', session.user?.id, 'orders', orderId] })
     }
     const unsubscribeEvent = realtimeClient.onEvent<{ status: Order['status'] }>('order.updated', invalidate)
@@ -97,8 +105,9 @@ export function OrderConfirmationPage() {
   const isConfirmed = order.status === 'confirmed'
   const isDeclined = order.status === 'declined'
 
-  return <section className="mx-auto max-w-4xl space-y-6" aria-labelledby="order-title">
-    <Card className="space-y-5 border-[#55321F] p-5 sm:p-8">
+  return <section className="mx-auto max-w-4xl space-y-6 lg:fixed lg:inset-0 lg:z-50 lg:flex lg:items-center lg:justify-center lg:overflow-y-auto lg:bg-[#140D0A] lg:px-4 lg:py-8" aria-labelledby="order-title">
+    <div className="w-full space-y-6 lg:max-w-[578px] lg:space-y-0 lg:bg-[#241612] lg:shadow-none">
+    <Card className="space-y-5 border-[#55321F] p-5 sm:p-8 lg:space-y-4 lg:rounded-none lg:border-x-0 lg:border-t-0 lg:border-b-[#D28A4C] lg:bg-transparent lg:px-11 lg:pb-4 lg:pt-7 lg:shadow-none">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2"><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E89B55]">{isConfirmed ? 'Recibo digital' : isDeclined ? 'Resultado do pagamento' : 'Acompanhamento'}</p><h1 id="order-title" className="text-2xl font-bold sm:text-3xl">{statusLabel[order.status]}</h1><p className="text-sm text-[#CFB28C]">Pedido <span className="font-mono text-[#F5F1EB]">{order.id}</span></p></div>
         <span className={`inline-flex w-fit items-center rounded-full border px-3 py-1.5 text-xs font-semibold ${isConfirmed ? 'border-emerald-300/30 text-emerald-200' : isDeclined ? 'border-red-300/30 text-red-200' : 'border-amber-300/30 text-amber-100'}`}>{statusLabel[order.status]}</span>
@@ -109,7 +118,7 @@ export function OrderConfirmationPage() {
       <dl className="grid gap-3 text-xs sm:grid-cols-2"><div className="rounded-lg border border-[#3F2319] bg-[#140D0A] p-3"><dt className="text-[#CFB28C]">Data do pedido</dt><dd className="mt-1 text-[#F5F1EB]">{new Date(order.createdAt).toLocaleString('pt-BR')}</dd></div><div className="rounded-lg border border-[#3F2319] bg-[#140D0A] p-3"><dt className="text-[#CFB28C]">Carteira e rede</dt><dd className="mt-1 text-[#F5F1EB]">{order.wallet.name} · {order.wallet.networkName} · {order.wallet.address}</dd></div><div className="rounded-lg border border-[#3F2319] bg-[#140D0A] p-3"><dt className="text-[#CFB28C]">Colecionador</dt><dd className="mt-1 text-[#F5F1EB]">{order.collector.name} · {order.collector.email}</dd></div>{order.transactionReference && <div className="rounded-lg border border-[#3F2319] bg-[#140D0A] p-3"><dt className="text-[#CFB28C]">Referência de transação simulada</dt><dd className="mt-1 break-all font-mono text-[#E89B55]">{order.transactionReference}</dd></div>}</dl>
     </Card>
 
-    <Card className="space-y-4 border-[#55321F] p-5 sm:p-7">
+    <Card className="space-y-4 border-[#55321F] p-5 sm:p-7 lg:rounded-none lg:border-0 lg:bg-transparent lg:px-11 lg:pb-12 lg:pt-5 lg:shadow-none">
       <h2 className="text-lg font-bold">Itens registrados no pedido</h2>
       <ul aria-label="Itens registrados no pedido" className="divide-y divide-[#3F2319]">{order.items.map((item) => <li key={item.itemId} className="flex items-center gap-3 py-4">
         {item.imageUrl && <img src={item.imageUrl} alt={`Arte de ${item.nftName}`} className="h-16 w-16 rounded-md object-cover" />}
@@ -126,5 +135,6 @@ export function OrderConfirmationPage() {
       {consumeMutation.isPending && <p role="status" className="text-xs text-[#CFB28C]">Atualizando somente as quantidades compradas no carrinho…</p>}
       <div className="flex flex-wrap gap-3 pt-2"><Link to="/" className="inline-flex min-h-10 items-center rounded-md bg-[#D28A4C] px-4 text-sm font-semibold text-[#140D0A]">Voltar ao catálogo</Link>{(isDeclined || consumeMutation.isError) && <Link to="/cart" className="inline-flex min-h-10 items-center rounded-md border border-[#D28A4C]/70 px-4 text-sm font-semibold text-[#F5F1EB]">Revisar carrinho</Link>}</div>
     </Card>
+    </div>
   </section>
 }

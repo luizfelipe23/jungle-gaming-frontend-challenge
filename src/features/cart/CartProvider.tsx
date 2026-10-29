@@ -11,6 +11,7 @@ import { CartContext, type CartCacheKey, type CartContextValue } from './cart-co
 import { addCartItem, applyCartCoupon, clearCartRequest, getCart, mergeGuestCart, quoteCart, removeCartCoupon, removeCartItem, updateCartItem } from './api/cartApi'
 import { clearGuestCart, readGuestCart } from './cart-storage'
 import type { CartApiError, CartLineInput, CartQuote, CartState } from './types/cart'
+import { keepNewestNft } from '../../lib/realtime/nft-version'
 
 function getErrorMessage(error: unknown) {
   if (isAxiosError<CartApiError>(error)) return error.response?.data.message ?? 'Não foi possível atualizar o carrinho. Tente novamente.'
@@ -61,6 +62,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     retry: false,
   })
   const cart = cartQuery.data ?? { items: [], couponCode: null, version: 0 }
+  const realtimeContextRef = useRef({ ownerKey, nftIds: new Set<string>() })
+  useEffect(() => {
+    realtimeContextRef.current = { ownerKey, nftIds: new Set(cart.items.map((item) => item.nftId)) }
+  }, [cart.items, ownerKey])
   const nftIds = useMemo(() => [...new Set(cart.items.map((line) => line.nftId))], [cart.items])
   const nftQueries = useQueries({
     queries: nftIds.map((nftId) => ({
@@ -146,21 +151,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [queryClient, session.isLoading, session.user])
 
   useEffect(() => {
-    if (!cart.items.length || import.meta.env.MODE === 'test') return
-    const unsubscribe = realtimeClient.onEvent<{ price: string; status: Nft['status']; availableQuantity: number }>('nft.updated', (event: RealtimeUpdateEvent<{ price: string; status: Nft['status']; availableQuantity: number }>) => {
-      const previousVersion = lastVersionsRef.current.get(event.resourceId) ?? 0
+    if (import.meta.env.MODE === 'test') return
+    realtimeClient.setScope(session.user?.id ?? null)
+    const unsubscribe = realtimeClient.onEvent<{ nft: Nft }>('nft.updated', (event: RealtimeUpdateEvent<{ nft: Nft }>) => {
+      if (!event || event.type !== 'nft.updated' || typeof event.resourceId !== 'string' || !Number.isSafeInteger(event.version) || event.version < 1 || !event.payload?.nft || event.payload.nft.id !== event.resourceId) return
+      const cachedNftVersion = Math.max(
+        queryClient.getQueryData<Nft>(['nft', event.resourceId])?.version ?? 0,
+        queryClient.getQueryData<Nft[]>(['nfts'])?.find((nft) => nft.id === event.resourceId)?.version ?? 0,
+      )
+      const previousVersion = Math.max(lastVersionsRef.current.get(event.resourceId) ?? 0, cachedNftVersion)
       if (event.version <= previousVersion) return
       lastVersionsRef.current.set(event.resourceId, event.version)
-      if (!cartQuery.data?.items.some((item) => item.nftId === event.resourceId)) return
-      setNotice('O preço ou a disponibilidade de um NFT mudou. A cotação está sendo atualizada.')
+      const changedNft = event.payload.nft
+      queryClient.setQueryData<Nft[]>(['nfts'], (previous) => previous?.map((nft) => nft.id === changedNft.id ? keepNewestNft(nft, changedNft) : nft))
+      queryClient.setQueryData<Nft>(['nft', event.resourceId], (previous) => keepNewestNft(previous, changedNft))
       queryClient.invalidateQueries({ queryKey: ['nft', event.resourceId] })
       queryClient.invalidateQueries({ queryKey: ['nfts'] })
-      queryClient.invalidateQueries({ queryKey: ['cartQuote', ownerKey] })
+      if (realtimeContextRef.current.nftIds.has(event.resourceId)) {
+        setNotice('O preço ou a disponibilidade de um NFT mudou. A cotação está sendo atualizada.')
+        queryClient.invalidateQueries({ queryKey: ['cartQuote', realtimeContextRef.current.ownerKey] })
+      }
+    })
+    const unsubscribeConnection = realtimeClient.onConnection(() => {
+      void queryClient.invalidateQueries({ queryKey: ['nfts'] })
+      void queryClient.invalidateQueries({ queryKey: ['nft'] })
+      void queryClient.invalidateQueries({ queryKey: ['cartQuote'] })
+      void queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'private' && query.queryKey[2] === 'orders' })
     })
     return () => {
       unsubscribe()
+      unsubscribeConnection()
     }
-  }, [cart.items.length, cartQuery.data, ownerKey, queryClient])
+  }, [ownerKey, queryClient, session.isLoading])
 
   const addItem = useCallback(async (item: CartLineInput) => { await addMutation.mutateAsync(item) }, [addMutation])
   const updateQuantity = useCallback(async (itemId: string, quantity: number) => { try { await quantityMutation.mutateAsync({ itemId, quantity }) } catch { /* Reported through context errorMessage. */ } }, [quantityMutation])

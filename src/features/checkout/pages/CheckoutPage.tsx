@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { isAxiosError } from 'axios'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
 
 import { Button } from '../../../components/ui/button'
 import { Card } from '../../../components/ui/card'
@@ -89,6 +90,7 @@ function CheckoutForm({ user }: { user: AuthUser }) {
   const [collector, setCollector] = useState<CollectorDetails>(() => ({ name: user.name, email: user.email }))
   const [collectorErrors, setCollectorErrors] = useState<Partial<Record<keyof CollectorDetails, string>>>({})
   const [walletId, setWalletId] = useState('')
+  const [selectedConnector, setSelectedConnector] = useState('Coinbase Wallet')
   const [networkId, setNetworkId] = useState('')
   const [connection, setConnection] = useState<WalletConnection | null>(null)
   const [connectionError, setConnectionError] = useState<string | null>(null)
@@ -314,11 +316,26 @@ function CheckoutForm({ user }: { user: AuthUser }) {
   const formSubmitBlocked = cart.isLoading || cart.isQuoteLoading || !validQuote || !isConnected || walletMutation.isPending || disconnectMutation.isPending || quoteMutation.isPending || Boolean(savedAttempt && !savedAttempt.safeToReplace)
   const totals = currentQuote?.totals ?? []
 
-  return <section className="mx-auto max-w-[1080px] space-y-7 sm:space-y-9" aria-labelledby="checkout-title">
+  return <>
+  <form onSubmit={(event) => void startOrder(event)} className="flex min-h-[100dvh] flex-col justify-between bg-[#140D0A] px-7 pb-8 pt-8 lg:hidden">
+    <div>
+      <header className="relative mb-7 flex h-10 items-center justify-center"><Link to="/cart" aria-label="Voltar ao carrinho" className="absolute left-0 flex h-[35px] w-[35px] items-center justify-center rounded-full border border-[#3F2319] bg-[#2F1D15] text-[#B39463]"><ArrowLeft className="h-4 w-4"/></Link><h1 className="text-[18px] font-bold">Pagamento com carteira</h1></header>
+      <div className="mb-5 flex items-center justify-between"><h2 className="text-[15px] font-bold">Carteira conectada</h2><Link to="/wallets" className="text-sm font-bold text-[#E89B55]">Trocar carteira</Link></div>
+      <div className="space-y-5">{wallets.slice(0, 2).map((wallet, index) => <button key={wallet.id} type="button" onClick={() => { setWalletId(wallet.id); setNetworkId(''); setConnection(null) }} className="flex min-h-[93px] w-full items-center gap-4 rounded-[18px] bg-[#241612] px-5 text-left"><span className={`h-4 w-4 rounded-full border-2 ${selectedWallet?.id === wallet.id ? 'border-[#D28A4C] after:ml-[3px] after:mt-[3px] after:block after:h-1.5 after:w-1.5 after:rounded-full after:bg-[#D28A4C]' : 'border-[#55321F]'}`}/><span className="min-w-0 flex-1"><strong className="block text-[15px]">{index === 0 ? 'Reserva' : 'Principal'}</strong><span className="mt-1 block truncate text-sm text-[#B39463]">{wallet.ensName || wallet.address}</span><span className="mt-1 block text-sm text-[#B39463]">Rede {wallet.networks[0]?.name}</span></span><span className="text-xl text-[#B39463]">⋮</span></button>)}</div>
+      {!wallets.length && <p className="rounded-xl bg-[#241612] p-5 text-sm text-[#CFB28C]">Adicione uma carteira ao seu perfil para pagar.</p>}
+      <h2 className="mb-3 mt-4 text-[15px] font-bold">Carteira e rede</h2>
+      <div className="space-y-4">{['WalletConnect', 'MetaMask', 'Coinbase Wallet'].map((provider) => <button key={provider} type="button" onClick={() => { setSelectedConnector(provider); if (!isConnected && selectedWallet && selectedNetwork) walletMutation.mutate() }} className="flex h-[65px] w-full items-center gap-3 rounded-[18px] bg-[#241612] px-4 text-left"><span className="flex h-10 w-10 items-center justify-center rounded-full border border-[#3F2319] bg-[#2F1D15] text-xs text-[#D28A4C]">{provider[0]}</span><span className="flex-1 text-sm">{provider}</span><span className={`h-4 w-4 rounded-full border-2 ${selectedConnector === provider ? 'border-[#D28A4C] after:ml-[3px] after:mt-[3px] after:block after:h-1.5 after:w-1.5 after:rounded-full after:bg-[#D28A4C]' : 'border-[#55321F]'}`}/></button>)}</div>
+      {connectionError && <p role="alert" className="mt-3 text-xs text-red-200">{connectionError}</p>}{error && <p role="alert" className="mt-3 text-xs text-red-200">{error}</p>}
+      <div className="mt-4 flex justify-end gap-3 text-[16px] font-bold">Total: <strong className="text-[#E89B55]">{totals[0] ? formatMoney(totals[0].total, totals[0].currency) : '—'}</strong></div>
+    </div>
+    <Button type={isConnected && acceptedFingerprint ? 'submit' : 'button'} onClick={() => { if (!isConnected && selectedWallet && selectedNetwork) walletMutation.mutate(); else if (!acceptedFingerprint) void revalidateQuote() }} disabled={isSubmitting || quoteMutation.isPending || !selectedWallet || Boolean(savedAttempt && !savedAttempt.safeToReplace)} className="h-[60px] w-full rounded-full text-sm font-bold">{isSubmitting ? 'Enviando…' : !isConnected ? walletMutation.isPending ? 'Conectando…' : 'Confirmar compra' : !acceptedFingerprint ? quoteMutation.isPending ? 'Atualizando…' : 'Confirmar compra' : 'Confirmar compra'}</Button>
+  </form>
+  <section className="mx-auto hidden max-w-[1200px] space-y-7 sm:space-y-9 lg:block" aria-labelledby="checkout-title">
+    <nav aria-label="Breadcrumb" className="mb-3 hidden text-sm font-bold lg:block"><Link to="/" className="hover:text-[#E89B55]">Início</Link><span className="px-2">/</span><Link to="/" className="hover:text-[#E89B55]">Mercado</Link><span className="px-2">/</span><span>Pagamento</span></nav>
     <header className="space-y-2">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E89B55]">Finalização segura</p>
-      <h1 id="checkout-title" className="text-2xl font-bold text-[#F5F1EB] sm:text-3xl">Pagamento</h1>
-      <p className="text-xs leading-6 text-[#CFB28C]">Confira seus dados, conecte uma carteira simulada e revise a cotação antes de enviar o pedido.</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E89B55] lg:hidden">Finalização segura</p>
+      <h1 id="checkout-title" className="text-2xl font-bold text-[#F5F1EB] sm:text-3xl lg:hidden">Pagamento</h1>
+      <p className="text-xs leading-6 text-[#CFB28C] lg:hidden">Confira seus dados, conecte uma carteira simulada e revise a cotação antes de enviar o pedido.</p>
     </header>
 
     {savedAttempt && <Card className="space-y-3 border-amber-300/30 p-4" role="status">
@@ -336,9 +353,9 @@ function CheckoutForm({ user }: { user: AuthUser }) {
 
     {cart.isLoading || walletsQuery.isLoading ? <Card role="status" aria-label="Carregando checkout" className="h-96 animate-pulse border-[#55321F]" /> : cart.itemCount === 0 ? <Card className="space-y-4 p-8 text-center">
       <h2 className="text-lg font-bold">Seu carrinho está vazio</h2><p className="text-sm text-[#CFB28C]">Adicione uma obra antes de iniciar o checkout.</p><Link to="/" className="text-sm text-[#E89B55] underline">Voltar ao catálogo</Link>
-    </Card> : <form onSubmit={(event) => void startOrder(event)} className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+    </Card> : <form onSubmit={(event) => void startOrder(event)} className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_405px] lg:gap-8">
       <div className="space-y-5">
-        <Card className="space-y-5 border-[#55321F] p-5 sm:p-6">
+        <Card className="space-y-5 border-[#55321F] p-5 sm:p-6 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
           <div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#E89B55]">01 · Colecionador</p><h2 className="mt-2 text-lg font-bold">Seus dados</h2></div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2"><label htmlFor="collector-name" className="text-xs font-semibold text-[#CFB28C]">Nome completo</label><Input id="collector-name" autoComplete="name" value={collector.name} onChange={(event) => { const name = event.currentTarget.value; setCollector((value) => ({ ...value, name })) }} aria-invalid={Boolean(collectorErrors.name)} aria-describedby={collectorErrors.name ? 'collector-name-error' : undefined} className="border-[#55321F]" />{collectorErrors.name && <p id="collector-name-error" className="text-xs text-red-200">{collectorErrors.name}</p>}</div>
@@ -346,7 +363,7 @@ function CheckoutForm({ user }: { user: AuthUser }) {
           </div>
         </Card>
 
-        <Card className="space-y-5 border-[#55321F] p-5 sm:p-6">
+        <Card className="space-y-5 border-[#55321F] p-5 sm:p-6 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
           <div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#E89B55]">02 · Carteira</p><h2 className="mt-2 text-lg font-bold">Selecione como pagar</h2><p className="mt-1 text-xs text-[#CFB28C]">A conexão é simulada e não solicita acesso a extensões ou serviços externos.</p></div>
           {walletsQuery.isError ? <div role="alert" className="space-y-3 text-sm text-red-200"><p>Não foi possível carregar suas carteiras.</p><Button type="button" variant="outline" onClick={() => void walletsQuery.refetch()}>Tentar novamente</Button></div> : wallets.length === 0 ? <p className="text-sm text-amber-100">Sua conta ainda não tem uma carteira disponível para o checkout.</p> : <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2"><label htmlFor="checkout-wallet" className="text-xs font-semibold text-[#CFB28C]">Carteira</label><select id="checkout-wallet" value={selectedWallet?.id ?? ''} onChange={(event) => { setWalletId(event.currentTarget.value); setConnection(null); setConnectionError(null); setNetworkId('') }} className="h-11 w-full rounded-md border border-[#55321F] bg-[#140D0A] px-3 text-sm text-[#F5F1EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E89B55]">{wallets.map((wallet) => <option key={wallet.id} value={wallet.id}>{wallet.name} · {wallet.address}</option>)}</select></div>
@@ -359,7 +376,7 @@ function CheckoutForm({ user }: { user: AuthUser }) {
           {connectionError && <p role="alert" className="text-xs text-red-200">{connectionError}</p>}
         </Card>
 
-        <Card className="space-y-4 border-[#55321F] p-5 sm:p-6">
+        <Card className="space-y-4 border-[#55321F] p-5 sm:p-6 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
           <div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#E89B55]">03 · Revisão</p><h2 className="mt-2 text-lg font-bold">Itens desta compra</h2></div>
           <ul aria-label="Itens da compra" className="divide-y divide-[#3F2319]">{currentQuote?.items.map((item) => <li key={item.itemId} className="flex items-center gap-3 py-3">
             {item.nft?.imageUrl && <img src={item.nft.imageUrl} alt="" className="h-14 w-14 rounded-md object-cover" />}
@@ -369,7 +386,7 @@ function CheckoutForm({ user }: { user: AuthUser }) {
         </Card>
       </div>
 
-      <Card className="space-y-5 border-[#55321F] p-5 sm:p-6 lg:sticky lg:top-24">
+      <Card className="space-y-5 border-[#55321F] p-5 sm:p-6 lg:sticky lg:top-24 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
         <div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#E89B55]">Resumo final</p><h2 className="mt-2 text-lg font-bold">Cotação atual</h2></div>
         {totals.length ? <div className="space-y-4 border-y border-[#3F2319] py-4 text-xs text-[#CFB28C]">{totals.filter((total) => total.subtotal !== '0').map((total) => <section key={total.currency} aria-label={`Resumo ${total.currency}`} className="space-y-2">
           <div className="flex justify-between gap-3"><span>Subtotal</span><span>{formatMoney(total.subtotal, total.currency)}</span></div>
@@ -388,4 +405,5 @@ function CheckoutForm({ user }: { user: AuthUser }) {
       </Card>
     </form>}
   </section>
+  </>
 }

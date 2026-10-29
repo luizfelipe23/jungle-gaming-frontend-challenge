@@ -1,0 +1,1130 @@
+{
+  "generatedAt": "2026-10-29T00:51:57.326Z",
+  "environment": {
+    "node": "v24.22.1",
+    "lighthouse": "13.6.0",
+    "vite": "8.3.5",
+    "playwright": "1.64.1",
+    "chromePath": "/ms-playwright/chromium-1248/chrome-linux64/chrome",
+    "dockerImage": "mcr.microsoft.com/playwright:v1.64.1-jammy",
+    "url": "http://127.0.0.1:4173",
+    "auditBackend": "Local fixture HTTP server using src/mocks/data/nfts.ts; local Socket.IO mock server",
+    "runsPerPageAndProfile": 3
+  },
+  "results": [
+    {
+      "profile": "mobile",
+      "page": "catalog",
+      "path": "/",
+      "runs": [
+        {
+          "scores": {
+            "performance": 98,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "lcpMs": 1531.3722,
+            "cls": 0.0004392402567067872,
+            "tbtMs": 112
+          },
+          "failingAudits": [
+            {
+              "id": "first-contentful-paint",
+              "title": "First Contentful Paint",
+              "score": 0.95,
+              "displayValue": "1.5 s",
+              "affectedElements": []
+            },
+            {
+              "id": "speed-index",
+              "title": "Speed Index",
+              "score": 0.98,
+              "displayValue": "2.4 s",
+              "affectedElements": []
+            },
+            {
+              "id": "total-blocking-time",
+              "title": "Total Blocking Time",
+              "score": 0.97,
+              "displayValue": "110 ms",
+              "affectedElements": []
+            },
+            {
+              "id": "max-potential-fid",
+              "title": "Max Potential First Input Delay",
+              "score": 0.95,
+              "displayValue": "110 ms",
+              "affectedElements": []
+            },
+            {
+              "id": "interactive",
+              "title": "Time to Interactive",
+              "score": 0.96,
+              "displayValue": "3.0 s",
+              "affectedElements": []
+            },
+            {
+              "id": "unused-javascript",
+              "title": "Reduce unused JavaScript",
+              "score": 0.5,
+              "displayValue": "Est savings of 53 KiB",
+              "affectedElements": []
+            },
+            {
+              "id": "llms-txt",
+              "title": "llms.txt does not follow recommendations",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "ard-schema",
+              "title": "ARD manifest is invalid",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "network-dependency-tree-insight",
+              "title": "Network dependency tree",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "render-blocking-insight",
+              "title": "Render-blocking requests",
+              "score": 0,
+              "displayValue": "Est savings of 900 ms",
+              "affectedElements": []
+            }
+          ],
+          "chromeVersion": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"
+        },
+        {
+          "scores": {
+            "performance": 99,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "lcpMs": 1535.3988499999998,
+            "cls": 0.0004392402567067872,
+            "tbtMs": 77
+          },
+          "failingAudits": [
+            {
+              "id": "first-contentful-paint",
+              "title": "First Contentful Paint",
+              "score": 0.95,
+              "displayValue": "1.5 s",
+              "affectedElements": []
+            },
+            {
+              "id": "total-blocking-time",
+              "title": "Total Blocking Time",
+              "score": 0.99,
+              "displayValue": "80 ms",
+              "affectedElements": []
+            },
+            {
+              "id": "max-potential-fid",
+              "title": "Max Potential First Input Delay",
+              "score": 0.94,
+              "displayValue": "110 ms",
+              "affectedElements": []
+            },
+            {
+              "id": "interactive",
+              "title": "Time to Interactive",
+              "score": 0.96,
+              "displayValue": "3.0 s",
+              "affectedElements": []
+            },
+            {
+              "id": "unused-javascript",
+              "title": "Reduce unused JavaScript",
+              "score": 0.5,
+              "displayValue": "Est savings of 53 KiB",
+              "affectedElements": []
+            },
+            {
+              "id": "llms-txt",
+              "title": "llms.txt does not follow recommendations",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "ard-schema",
+              "title": "ARD manifest is invalid",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "network-dependency-tree-insight",
+              "title": "Network dependency tree",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "render-blocking-insight",
+              "title": "Render-blocking requests",
+              "score": 0,
+              "displayValue": "Est savings of 920 ms",
+              "affectedElements": []
+            }
+          ],
+          "chromeVersion": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"
+        },
+        {
+          "scores": {
+            "performance": 96,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "lcpMs": 1522.33435,
+            "cls": 0.0004392402567067872,
+            "tbtMs": 219
+          },
+          "failingAudits": [
+            {
+              "id": "first-contentful-paint",
+              "title": "First Contentful Paint",
+              "score": 0.95,
+              "displayValue": "1.5 s",
+              "affectedElements": []
+            },
+            {
+              "id": "speed-index",
+              "title": "Speed Index",
+              "score": 0.98,
+              "displayValue": "2.5 s",
+              "affectedElements": []
+            },
+            {
+              "id": "total-blocking-time",
+              "title": "Total Blocking Time",
+              "score": 0.88,
+              "displayValue": "220 ms",
+              "affectedElements": []
+            },
+            {
+              "id": "max-potential-fid",
+              "title": "Max Potential First Input Delay",
+              "score": 0.85,
+              "displayValue": "150 ms",
+              "affectedElements": []
+            },
+            {
+              "id": "interactive",
+              "title": "Time to Interactive",
+              "score": 0.95,
+              "displayValue": "3.1 s",
+              "affectedElements": []
+            },
+            {
+              "id": "unused-javascript",
+              "title": "Reduce unused JavaScript",
+              "score": 0.5,
+              "displayValue": "Est savings of 53 KiB",
+              "affectedElements": []
+            },
+            {
+              "id": "llms-txt",
+              "title": "llms.txt does not follow recommendations",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "ard-schema",
+              "title": "ARD manifest is invalid",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "network-dependency-tree-insight",
+              "title": "Network dependency tree",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "render-blocking-insight",
+              "title": "Render-blocking requests",
+              "score": 0,
+              "displayValue": "Est savings of 900 ms",
+              "affectedElements": []
+            }
+          ],
+          "chromeVersion": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"
+        }
+      ],
+      "medians": {
+        "scores": {
+          "performance": 98,
+          "accessibility": 100,
+          "best-practices": 100,
+          "seo": 100
+        },
+        "metrics": {
+          "lcpMs": 1531.3722,
+          "cls": 0.0004392402567067872,
+          "tbtMs": 112
+        }
+      }
+    },
+    {
+      "profile": "mobile",
+      "page": "nft-details",
+      "path": "/nft/nft-001",
+      "runs": [
+        {
+          "scores": {
+            "performance": 79,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "lcpMs": 3491.95345,
+            "cls": 0.1070971418616359,
+            "tbtMs": 103
+          },
+          "failingAudits": [
+            {
+              "id": "first-contentful-paint",
+              "title": "First Contentful Paint",
+              "score": 0.95,
+              "displayValue": "1.5 s",
+              "affectedElements": []
+            },
+            {
+              "id": "largest-contentful-paint",
+              "title": "Largest Contentful Paint",
+              "score": 0.64,
+              "displayValue": "3.5 s",
+              "affectedElements": []
+            },
+            {
+              "id": "speed-index",
+              "title": "Speed Index",
+              "score": 0.16,
+              "displayValue": "8.7 s",
+              "affectedElements": []
+            },
+            {
+              "id": "total-blocking-time",
+              "title": "Total Blocking Time",
+              "score": 0.98,
+              "displayValue": "100 ms",
+              "affectedElements": []
+            },
+            {
+              "id": "max-potential-fid",
+              "title": "Max Potential First Input Delay",
+              "score": 0.97,
+              "displayValue": "100 ms",
+              "affectedElements": []
+            },
+            {
+              "id": "cumulative-layout-shift",
+              "title": "Cumulative Layout Shift",
+              "score": 0.88,
+              "displayValue": "0.107",
+              "affectedElements": []
+            },
+            {
+              "id": "interactive",
+              "title": "Time to Interactive",
+              "score": 0.92,
+              "displayValue": "3.5 s",
+              "affectedElements": []
+            },
+            {
+              "id": "layout-shifts",
+              "title": "Avoid large layout shifts",
+              "score": 0,
+              "displayValue": "2 layout shifts found",
+              "affectedElements": [
+                {
+                  "selector": "body > div#root > div.min-h-screen > footer#rodape",
+                  "nodeLabel": "KURIO.\n\nArte digital selecionada para quem coleciona o que vem pela frente.\n\n© …",
+                  "snippet": "<footer id=\"rodape\" class=\"border-t border-[#3F2319] bg-[#140D0A]\">"
+                },
+                {
+                  "selector": "div.min-h-screen > nav.fixed > ul.mx-auto > li",
+                  "nodeLabel": "Carrinho",
+                  "snippet": "<li>"
+                }
+              ]
+            },
+            {
+              "id": "unused-javascript",
+              "title": "Reduce unused JavaScript",
+              "score": 0,
+              "displayValue": "Est savings of 54 KiB",
+              "affectedElements": []
+            },
+            {
+              "id": "llms-txt",
+              "title": "llms.txt does not follow recommendations",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "ard-schema",
+              "title": "ARD manifest is invalid",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "cls-culprits-insight",
+              "title": "Layout shift culprits",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "lcp-breakdown-insight",
+              "title": "LCP breakdown",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "network-dependency-tree-insight",
+              "title": "Network dependency tree",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "render-blocking-insight",
+              "title": "Render-blocking requests",
+              "score": 0,
+              "displayValue": "Est savings of 900 ms",
+              "affectedElements": []
+            }
+          ],
+          "chromeVersion": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"
+        },
+        {
+          "scores": {
+            "performance": 79,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "lcpMs": 3487.1451,
+            "cls": 0.1070971418616359,
+            "tbtMs": 97
+          },
+          "failingAudits": [
+            {
+              "id": "first-contentful-paint",
+              "title": "First Contentful Paint",
+              "score": 0.95,
+              "displayValue": "1.5 s",
+              "affectedElements": []
+            },
+            {
+              "id": "largest-contentful-paint",
+              "title": "Largest Contentful Paint",
+              "score": 0.64,
+              "displayValue": "3.5 s",
+              "affectedElements": []
+            },
+            {
+              "id": "speed-index",
+              "title": "Speed Index",
+              "score": 0.16,
+              "displayValue": "8.8 s",
+              "affectedElements": []
+            },
+            {
+              "id": "total-blocking-time",
+              "title": "Total Blocking Time",
+              "score": 0.98,
+              "displayValue": "100 ms",
+              "affectedElements": []
+            },
+            {
+              "id": "max-potential-fid",
+              "title": "Max Potential First Input Delay",
+              "score": 0.96,
+              "displayValue": "100 ms",
+              "affectedElements": []
+            },
+            {
+              "id": "cumulative-layout-shift",
+              "title": "Cumulative Layout Shift",
+              "score": 0.88,
+              "displayValue": "0.107",
+              "affectedElements": []
+            },
+            {
+              "id": "interactive",
+              "title": "Time to Interactive",
+              "score": 0.92,
+              "displayValue": "3.5 s",
+              "affectedElements": []
+            },
+            {
+              "id": "layout-shifts",
+              "title": "Avoid large layout shifts",
+              "score": 0,
+              "displayValue": "2 layout shifts found",
+              "affectedElements": [
+                {
+                  "selector": "body > div#root > div.min-h-screen > footer#rodape",
+                  "nodeLabel": "KURIO.\n\nArte digital selecionada para quem coleciona o que vem pela frente.\n\n© …",
+                  "snippet": "<footer id=\"rodape\" class=\"border-t border-[#3F2319] bg-[#140D0A]\">"
+                },
+                {
+                  "selector": "div.min-h-screen > nav.fixed > ul.mx-auto > li",
+                  "nodeLabel": "Carrinho",
+                  "snippet": "<li>"
+                }
+              ]
+            },
+            {
+              "id": "unused-javascript",
+              "title": "Reduce unused JavaScript",
+              "score": 0,
+              "displayValue": "Est savings of 54 KiB",
+              "affectedElements": []
+            },
+            {
+              "id": "llms-txt",
+              "title": "llms.txt does not follow recommendations",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "ard-schema",
+              "title": "ARD manifest is invalid",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "cls-culprits-insight",
+              "title": "Layout shift culprits",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "lcp-breakdown-insight",
+              "title": "LCP breakdown",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "network-dependency-tree-insight",
+              "title": "Network dependency tree",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "render-blocking-insight",
+              "title": "Render-blocking requests",
+              "score": 0,
+              "displayValue": "Est savings of 910 ms",
+              "affectedElements": []
+            }
+          ],
+          "chromeVersion": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"
+        },
+        {
+          "scores": {
+            "performance": 78,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "lcpMs": 3547.9942499999997,
+            "cls": 0.1070971418616359,
+            "tbtMs": 108
+          },
+          "failingAudits": [
+            {
+              "id": "first-contentful-paint",
+              "title": "First Contentful Paint",
+              "score": 0.94,
+              "displayValue": "1.6 s",
+              "affectedElements": []
+            },
+            {
+              "id": "largest-contentful-paint",
+              "title": "Largest Contentful Paint",
+              "score": 0.62,
+              "displayValue": "3.5 s",
+              "affectedElements": []
+            },
+            {
+              "id": "speed-index",
+              "title": "Speed Index",
+              "score": 0.16,
+              "displayValue": "8.8 s",
+              "affectedElements": []
+            },
+            {
+              "id": "total-blocking-time",
+              "title": "Total Blocking Time",
+              "score": 0.98,
+              "displayValue": "110 ms",
+              "affectedElements": []
+            },
+            {
+              "id": "max-potential-fid",
+              "title": "Max Potential First Input Delay",
+              "score": 0.95,
+              "displayValue": "110 ms",
+              "affectedElements": []
+            },
+            {
+              "id": "cumulative-layout-shift",
+              "title": "Cumulative Layout Shift",
+              "score": 0.88,
+              "displayValue": "0.107",
+              "affectedElements": []
+            },
+            {
+              "id": "interactive",
+              "title": "Time to Interactive",
+              "score": 0.92,
+              "displayValue": "3.5 s",
+              "affectedElements": []
+            },
+            {
+              "id": "layout-shifts",
+              "title": "Avoid large layout shifts",
+              "score": 0,
+              "displayValue": "2 layout shifts found",
+              "affectedElements": [
+                {
+                  "selector": "body > div#root > div.min-h-screen > footer#rodape",
+                  "nodeLabel": "KURIO.\n\nArte digital selecionada para quem coleciona o que vem pela frente.\n\n© …",
+                  "snippet": "<footer id=\"rodape\" class=\"border-t border-[#3F2319] bg-[#140D0A]\">"
+                },
+                {
+                  "selector": "div.min-h-screen > nav.fixed > ul.mx-auto > li",
+                  "nodeLabel": "Carrinho",
+                  "snippet": "<li>"
+                }
+              ]
+            },
+            {
+              "id": "unused-javascript",
+              "title": "Reduce unused JavaScript",
+              "score": 0,
+              "displayValue": "Est savings of 54 KiB",
+              "affectedElements": []
+            },
+            {
+              "id": "llms-txt",
+              "title": "llms.txt does not follow recommendations",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "ard-schema",
+              "title": "ARD manifest is invalid",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "cls-culprits-insight",
+              "title": "Layout shift culprits",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "lcp-breakdown-insight",
+              "title": "LCP breakdown",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "network-dependency-tree-insight",
+              "title": "Network dependency tree",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "render-blocking-insight",
+              "title": "Render-blocking requests",
+              "score": 0,
+              "displayValue": "Est savings of 980 ms",
+              "affectedElements": []
+            }
+          ],
+          "chromeVersion": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"
+        }
+      ],
+      "medians": {
+        "scores": {
+          "performance": 79,
+          "accessibility": 100,
+          "best-practices": 100,
+          "seo": 100
+        },
+        "metrics": {
+          "lcpMs": 3491.95345,
+          "cls": 0.1070971418616359,
+          "tbtMs": 103
+        }
+      }
+    },
+    {
+      "profile": "desktop",
+      "page": "catalog",
+      "path": "/",
+      "runs": [
+        {
+          "scores": {
+            "performance": 100,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "lcpMs": 538.26655,
+            "cls": 0.002686490977838782,
+            "tbtMs": 0
+          },
+          "failingAudits": [
+            {
+              "id": "unused-javascript",
+              "title": "Reduce unused JavaScript",
+              "score": 0.5,
+              "displayValue": "Est savings of 53 KiB",
+              "affectedElements": []
+            },
+            {
+              "id": "llms-txt",
+              "title": "llms.txt does not follow recommendations",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "ard-schema",
+              "title": "ARD manifest is invalid",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "network-dependency-tree-insight",
+              "title": "Network dependency tree",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "render-blocking-insight",
+              "title": "Render-blocking requests",
+              "score": 0,
+              "displayValue": "Est savings of 370 ms",
+              "affectedElements": []
+            }
+          ],
+          "chromeVersion": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"
+        },
+        {
+          "scores": {
+            "performance": 100,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "lcpMs": 599.4028500000001,
+            "cls": 0.002686490977838782,
+            "tbtMs": 0
+          },
+          "failingAudits": [
+            {
+              "id": "first-contentful-paint",
+              "title": "First Contentful Paint",
+              "score": 0.99,
+              "displayValue": "0.6 s",
+              "affectedElements": []
+            },
+            {
+              "id": "largest-contentful-paint",
+              "title": "Largest Contentful Paint",
+              "score": 0.99,
+              "displayValue": "0.6 s",
+              "affectedElements": []
+            },
+            {
+              "id": "unused-javascript",
+              "title": "Reduce unused JavaScript",
+              "score": 0.5,
+              "displayValue": "Est savings of 53 KiB",
+              "affectedElements": []
+            },
+            {
+              "id": "llms-txt",
+              "title": "llms.txt does not follow recommendations",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "ard-schema",
+              "title": "ARD manifest is invalid",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "network-dependency-tree-insight",
+              "title": "Network dependency tree",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "render-blocking-insight",
+              "title": "Render-blocking requests",
+              "score": 0,
+              "displayValue": "Est savings of 430 ms",
+              "affectedElements": []
+            }
+          ],
+          "chromeVersion": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"
+        },
+        {
+          "scores": {
+            "performance": 100,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "lcpMs": 538.8129999999999,
+            "cls": 0.002686490977838782,
+            "tbtMs": 0
+          },
+          "failingAudits": [
+            {
+              "id": "first-contentful-paint",
+              "title": "First Contentful Paint",
+              "score": 0.99,
+              "displayValue": "0.5 s",
+              "affectedElements": []
+            },
+            {
+              "id": "unused-javascript",
+              "title": "Reduce unused JavaScript",
+              "score": 0.5,
+              "displayValue": "Est savings of 53 KiB",
+              "affectedElements": []
+            },
+            {
+              "id": "llms-txt",
+              "title": "llms.txt does not follow recommendations",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "ard-schema",
+              "title": "ARD manifest is invalid",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "network-dependency-tree-insight",
+              "title": "Network dependency tree",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "render-blocking-insight",
+              "title": "Render-blocking requests",
+              "score": 0,
+              "displayValue": "Est savings of 370 ms",
+              "affectedElements": []
+            }
+          ],
+          "chromeVersion": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"
+        }
+      ],
+      "medians": {
+        "scores": {
+          "performance": 100,
+          "accessibility": 100,
+          "best-practices": 100,
+          "seo": 100
+        },
+        "metrics": {
+          "lcpMs": 538.8129999999999,
+          "cls": 0.002686490977838782,
+          "tbtMs": 0
+        }
+      }
+    },
+    {
+      "profile": "desktop",
+      "page": "nft-details",
+      "path": "/nft/nft-001",
+      "runs": [
+        {
+          "scores": {
+            "performance": 95,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "lcpMs": 884.6650500000001,
+            "cls": 0.062,
+            "tbtMs": 0
+          },
+          "failingAudits": [
+            {
+              "id": "first-contentful-paint",
+              "title": "First Contentful Paint",
+              "score": 0.99,
+              "displayValue": "0.6 s",
+              "affectedElements": []
+            },
+            {
+              "id": "largest-contentful-paint",
+              "title": "Largest Contentful Paint",
+              "score": 0.97,
+              "displayValue": "0.9 s",
+              "affectedElements": []
+            },
+            {
+              "id": "speed-index",
+              "title": "Speed Index",
+              "score": 0.63,
+              "displayValue": "2.0 s",
+              "affectedElements": []
+            },
+            {
+              "id": "cumulative-layout-shift",
+              "title": "Cumulative Layout Shift",
+              "score": 0.97,
+              "displayValue": "0.062",
+              "affectedElements": []
+            },
+            {
+              "id": "unused-javascript",
+              "title": "Reduce unused JavaScript",
+              "score": 0,
+              "displayValue": "Est savings of 54 KiB",
+              "affectedElements": []
+            },
+            {
+              "id": "llms-txt",
+              "title": "llms.txt does not follow recommendations",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "ard-schema",
+              "title": "ARD manifest is invalid",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "lcp-breakdown-insight",
+              "title": "LCP breakdown",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "network-dependency-tree-insight",
+              "title": "Network dependency tree",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "render-blocking-insight",
+              "title": "Render-blocking requests",
+              "score": 0,
+              "displayValue": "Est savings of 380 ms",
+              "affectedElements": []
+            }
+          ],
+          "chromeVersion": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"
+        },
+        {
+          "scores": {
+            "performance": 95,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "lcpMs": 887.8732000000002,
+            "cls": 0.062,
+            "tbtMs": 0
+          },
+          "failingAudits": [
+            {
+              "id": "first-contentful-paint",
+              "title": "First Contentful Paint",
+              "score": 0.99,
+              "displayValue": "0.6 s",
+              "affectedElements": []
+            },
+            {
+              "id": "largest-contentful-paint",
+              "title": "Largest Contentful Paint",
+              "score": 0.97,
+              "displayValue": "0.9 s",
+              "affectedElements": []
+            },
+            {
+              "id": "speed-index",
+              "title": "Speed Index",
+              "score": 0.63,
+              "displayValue": "2.0 s",
+              "affectedElements": []
+            },
+            {
+              "id": "cumulative-layout-shift",
+              "title": "Cumulative Layout Shift",
+              "score": 0.97,
+              "displayValue": "0.062",
+              "affectedElements": []
+            },
+            {
+              "id": "unused-javascript",
+              "title": "Reduce unused JavaScript",
+              "score": 0,
+              "displayValue": "Est savings of 54 KiB",
+              "affectedElements": []
+            },
+            {
+              "id": "llms-txt",
+              "title": "llms.txt does not follow recommendations",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "ard-schema",
+              "title": "ARD manifest is invalid",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "lcp-breakdown-insight",
+              "title": "LCP breakdown",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "network-dependency-tree-insight",
+              "title": "Network dependency tree",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "render-blocking-insight",
+              "title": "Render-blocking requests",
+              "score": 0,
+              "displayValue": "Est savings of 390 ms",
+              "affectedElements": []
+            }
+          ],
+          "chromeVersion": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"
+        },
+        {
+          "scores": {
+            "performance": 95,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "lcpMs": 884.1702500000001,
+            "cls": 0.062,
+            "tbtMs": 0
+          },
+          "failingAudits": [
+            {
+              "id": "first-contentful-paint",
+              "title": "First Contentful Paint",
+              "score": 0.99,
+              "displayValue": "0.5 s",
+              "affectedElements": []
+            },
+            {
+              "id": "largest-contentful-paint",
+              "title": "Largest Contentful Paint",
+              "score": 0.97,
+              "displayValue": "0.9 s",
+              "affectedElements": []
+            },
+            {
+              "id": "speed-index",
+              "title": "Speed Index",
+              "score": 0.62,
+              "displayValue": "2.0 s",
+              "affectedElements": []
+            },
+            {
+              "id": "cumulative-layout-shift",
+              "title": "Cumulative Layout Shift",
+              "score": 0.97,
+              "displayValue": "0.062",
+              "affectedElements": []
+            },
+            {
+              "id": "unused-javascript",
+              "title": "Reduce unused JavaScript",
+              "score": 0,
+              "displayValue": "Est savings of 54 KiB",
+              "affectedElements": []
+            },
+            {
+              "id": "llms-txt",
+              "title": "llms.txt does not follow recommendations",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "ard-schema",
+              "title": "ARD manifest is invalid",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "lcp-breakdown-insight",
+              "title": "LCP breakdown",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "network-dependency-tree-insight",
+              "title": "Network dependency tree",
+              "score": 0,
+              "affectedElements": []
+            },
+            {
+              "id": "render-blocking-insight",
+              "title": "Render-blocking requests",
+              "score": 0,
+              "displayValue": "Est savings of 370 ms",
+              "affectedElements": []
+            }
+          ],
+          "chromeVersion": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"
+        }
+      ],
+      "medians": {
+        "scores": {
+          "performance": 95,
+          "accessibility": 100,
+          "best-practices": 100,
+          "seo": 100
+        },
+        "metrics": {
+          "lcpMs": 884.6650500000001,
+          "cls": 0.062,
+          "tbtMs": 0
+        }
+      }
+    }
+  ]
+}

@@ -20,13 +20,13 @@ export function CatalogFilterToggle({ mobileOpen, onToggle }: { mobileOpen: bool
     <Button
       type="button"
       variant="outline"
-      className="h-11 shrink-0 gap-2 px-3 lg:hidden"
+      className="h-[45px] w-[45px] shrink-0 rounded-[14px] border-0 bg-gradient-to-br from-[#D28A4C]/50 to-[#D28A4C] p-0 text-[#140D0A] lg:hidden"
       aria-expanded={mobileOpen}
       aria-controls="catalog-filter-panel"
       onClick={onToggle}
     >
       <Filter aria-hidden="true" className="h-4 w-4" />
-      <span className="sr-only sm:not-sr-only">Filtros</span>
+      <span className="sr-only">Filtros</span>
     </Button>
   )
 }

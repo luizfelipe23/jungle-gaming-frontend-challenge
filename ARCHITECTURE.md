@@ -2,6 +2,12 @@
 
 ## Camadas e responsabilidades
 
+### Carregamento e bundle de producao
+
+`src/app/router.tsx` declara cada pagina com `lazyRouteComponent`, separando os bundles de catalogo, detalhes, carrinho, checkout, conta e pedidos. O MSW entra no bundle quando `VITE_ENABLE_MOCKS=true`; sem essa opcao, sua importacao fica restrita ao desenvolvimento. A auditoria Lighthouse usa uma API HTTP e Socket.IO locais para fixtures.
+
+O chunk principal medido no build atual tem aproximadamente 396 kB (126 kB gzip); a referencia antes da separacao de rotas e da exclusao do MSW era 1.053 kB (349 kB gzip). Os resultados Lighthouse para mobile e desktop estao em `reports/lighthouse/latest.json`, com tres repeticoes e medianas para catalogo e detalhes. Execute `docker compose run --rm lighthouse` para atualizar esse artefato.
+
 ### 1. App shell
 A camada `src/app` centraliza a inicialização da aplicação:
 - `providers.tsx`: monta o `QueryClientProvider` do TanStack Query.
@@ -61,9 +67,15 @@ Em `src/mocks`, os dados simulados são separados por domínio.
 - A base atual foi mantida simples para reduzir reestruturações futuras e permitir crescimento incremental.
 
 ## Socket.IO
-O cliente em `src/lib/realtime/socket-client.ts` consome eventos tipados de `src/lib/realtime/types.ts`, incluindo `nft.updated` e `order.updated`. No carrinho, eventos versionados `nft.updated` atualizam a cotação e a disponibilidade pelo TanStack Query.
+O contrato em `src/lib/realtime/types.ts` define `type`, `resourceId`, `version`, `updatedAt` e `payload`. A versão é monotônica por recurso; o cliente ignora duplicatas e versões antigas. `nft.updated` carrega o NFT atualizado, atualiza o cache TanStack Query do catálogo/detalhe e invalida essas consultas para reconciliar REST. Quando o NFT está no carrinho, sua cotação também é invalidada. A reconciliação preserva dados com versão maior caso uma resposta REST atrasada chegue depois do evento.
+
+`order.updated` inclui `scopeId` da conta dona do pedido e é filtrado por escopo, ID e versão maior que a última conhecida. A tela invalida a consulta privada e recupera o pedido pela API; pedidos pendentes também são consultados periodicamente. O cache impede regressão de versão e impede que estados terminais voltem para `pending`. O recibo continua baseado no snapshot imutável do pedido.
+
+O cliente usa reconexão automática contínua. Ao conectar ou reconectar, invalida catálogo, detalhes, cotações e consultas de pedidos para recuperar o estado via REST. Listeners são removidos no cleanup das subscriptions e ao desconectar; logout/401 encerra a conexão, e a troca de usuário remove os caches privados. O cache e a chave do carrinho visitante permanecem fora da invalidação privada.
 
 Para validar o fluxo sem backend, o Playwright inicia o servidor Socket.IO de teste em `scripts/mock-realtime-server.mjs` ao lado do Vite por `scripts/e2e-server.mjs`. O MSW altera os dados de cenário; o teste encaminha o evento retornado pelo mock ao servidor Socket.IO real. Os dois processos são encerrados junto com o ciclo do Playwright.
+
+O endpoint de cenário `POST /api/dev/scenarios/nft-update` atualiza a fixture REST em memória, incrementa a versão do NFT e devolve o evento completo. O teste encaminha esse evento pelo endpoint auxiliar `/__test__/emit`; `/__test__/drop-connections` fecha os transports ativos para exercitar a reconexão. A simulação não publica eventos automaticamente a partir do MSW: o E2E faz o encaminhamento explícito ao servidor Socket.IO. O helper E2E transmite a todos os sockets conectados; a tela de pedido filtra por `scopeId`. Um backend real precisa autorizar o socket e restringir eventos privados à conta proprietária. Como a fixture NFT não é durável, o MSW pode reiniciá-la quando seu worker é encerrado; os testes de evento mantêm a página aberta para garantir que o estado REST e o evento compartilhem o mesmo worker.
 
 ## Cart state and persistence
 
@@ -73,7 +85,7 @@ Para validar o fluxo sem backend, o Playwright inicia o servidor Socket.IO de te
 - Login merges guest lines into that account's mock cart using an idempotency key. Same NFT/edition lines consolidate and are clamped to current stock; unavailable or reduced quantities are reported in a notice before visitor data is removed.
 - NFT prices and quote values are decimal strings. `lib/money.ts` uses fixed scale `BigInt` arithmetic; ETH is represented to 18 decimal places and USD discounts are rounded to cents. Currency totals remain separate.
 - Quotes contain current item prices, accepted quantities, subtotal, discount, network fee, total, currency, cart version and expiry. Failed or stale quotes block the checkout link without deleting items.
-- The app uses `socket.io-client` for versioned `nft.updated` events. Price/inventory events invalidate NFT and quote queries. Playwright starts `scripts/mock-realtime-server.mjs` beside Vite through `scripts/e2e-server.mjs`; the MSW scenario endpoint mutates the fixture and the E2E emits the returned event through the local Socket.IO server.
+- The app uses `socket.io-client` for versioned `nft.updated` events. Price/inventory events reconcile the catalog/detail cache and invalidate matching REST queries; cart quotes are invalidated when a listed NFT changes. Duplicate and older resource versions are ignored. Playwright starts `scripts/mock-realtime-server.mjs` beside Vite through `scripts/e2e-server.mjs`; the MSW scenario endpoint mutates the fixture and the E2E emits the returned event through the local Socket.IO server.
 - `/cart` supports quantity controls, editions, removal/clear, coupons, quote retry, inventory errors, responsive totals and catalog navigation. `/checkout` is protected and validates a fresh quote before order creation.
 
 ## Autenticação simulada
@@ -85,6 +97,12 @@ Para validar o fluxo sem backend, o Playwright inicia o servidor Socket.IO de te
 - `/checkout`, `/profile`, `/wallets` e `/orders/$orderId/confirmation` validam a sessão em `beforeLoad`; uma sessão inválida redireciona ao login preservando o destino local.
 - Logout/401 invalidam token local, cache privado e conexões realtime; a chave do carrinho visitante `frontend-challenge:cart:guest:v1` é preservada.
 - Essa autenticação roda no cliente e é somente para desenvolvimento/testes. MSW e armazenamento local não oferecem proteção de produção.
+
+## Publicação
+
+`render.yaml` configura o Web Service do Render. `scripts/serve-production.mjs` serve a pasta `dist`, fornece fallback de `index.html` para rotas do TanStack Router e expõe `/health`; o mesmo servidor HTTP hospeda Socket.IO e usa `PORT` em `0.0.0.0`. O cliente usa `VITE_SOCKET_URL` quando definido, localhost no desenvolvimento e a origem atual na build de produção.
+
+O deploy de demonstração define `VITE_ENABLE_MOCKS=true`. `src/main.tsx` importa e aguarda o worker MSW antes de montar a aplicação, e `public/mockServiceWorker.js` é copiado para a saída. Sem essa variável, o mock continua restrito ao desenvolvimento. O servidor Socket.IO compartilha a inicialização entre produção e `scripts/mock-realtime-server.mjs`; pedidos entram na sala indicada pelo `scopeId` de demonstração. Isso separa a entrega dos eventos por conta simulada, mas não substitui autenticação/autorização de um backend real.
 
 ## Simplificações desta etapa
 - O catálogo inicial implementa busca, filtros, ordenação e paginação no cliente, com o estado persistido nos parâmetros da URL.

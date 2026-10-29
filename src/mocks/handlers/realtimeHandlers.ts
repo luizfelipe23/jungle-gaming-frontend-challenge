@@ -33,14 +33,15 @@ export const realtimeHandlers = [
     }
     if (nft.availableQuantity === 0 && !nft.editions?.some((edition) => edition.availableQuantity > 0)) nft.status = 'reserved'
 
-    const version = (versions.get(nft.id) ?? 0) + 1
+    const version = Math.max(versions.get(nft.id) ?? 0, nft.version ?? 0) + 1
     versions.set(nft.id, version)
-    const event: RealtimeUpdateEvent<{ price: string; status: typeof nft.status; availableQuantity: number }> = {
+    nft.version = version
+    const event: RealtimeUpdateEvent<{ nft: typeof nft }> = {
       type: 'nft.updated',
       resourceId: nft.id,
       version,
       updatedAt: new Date().toISOString(),
-      payload: { price: nft.price, status: nft.status, availableQuantity: nft.availableQuantity },
+      payload: { nft: structuredClone(nft) },
     }
     return HttpResponse.json({ event })
   }),
