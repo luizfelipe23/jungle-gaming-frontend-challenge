@@ -40,7 +40,7 @@ As rotas `/login` e `/register` usam os endpoints MSW `POST /api/auth/login`, `P
 
 O cadastro aceita uma nova conta com senha de pelo menos 10 caracteres e um numero; a confirmacao tambem deve coincidir. E-mails existentes retornam conflito. Para repetir cenarios localmente, limpe os dados do site no navegador: contas criadas e sessoes simuladas ficam no armazenamento local.
 
-O identificador de sessao fica em `frontend-challenge:auth:session:v1`; o MSW persiste contas e sessoes simuladas em chaves `frontend-challenge:mock-auth:*`. A sessao e recuperada por `GET /api/auth/session` depois de atualizar a pagina e expira apos uma hora. Uma resposta `401` invalida dados privados do TanStack Query, encerra a conexao Socket.IO quando ativa e encaminha para o login preservando a rota local para retorno. `/checkout`, `/profile`, `/wallets` e `/orders/$orderId/confirmation` exigem sessao. Catalogo, detalhes e carrinho permanecem publicos. Logout remove sessao e cache privado sem apagar `frontend-challenge:cart:guest:v1`.
+O identificador de sessao fica em `frontend-challenge:auth:session:v1`; o MSW persiste contas e sessoes simuladas em chaves `frontend-challenge:mock-auth:*`. A sessao e recuperada por `GET /api/auth/session` depois de atualizar a pagina e expira apos uma hora. Uma resposta `401` invalida dados privados do TanStack Query, limpa o escopo privado do Socket.IO e encaminha para o login preservando a rota local para retorno. `/checkout`, `/profile`, `/wallets` e `/orders/$orderId/confirmation` exigem sessao. Catalogo, detalhes e carrinho permanecem publicos. Logout remove sessao e cache privado sem apagar `frontend-challenge:cart:guest:v1`.
 
 Esta autenticacao e uma simulacao no navegador: MSW, `localStorage` e hashes de senha nao constituem seguranca de producao. A aplicacao real deve usar backend, sessao controlada pelo servidor e cookies seguros. Nao reutilize credenciais demonstrativas.
 
@@ -67,8 +67,8 @@ Para publicar:
 
 1. Versione e envie para o GitHub os commits e as alterações que devem compor a entrega.
 2. No Render, escolha **New > Blueprint**, conecte o GitHub e selecione este repositório e a branch `main`.
-3. Revise o serviço `jungle-gaming-frontend` detectado pelo `render.yaml` e aplique o Blueprint. O comando de build é `npm ci && npm run build`; o de inicialização é `npm start`.
-4. Confirme que `VITE_ENABLE_MOCKS=true`, `VITE_API_BASE_URL=/api` e `VITE_API_TIMEOUT=15000` estão definidos. Essas variáveis são públicas e não contêm segredos. Não configure `VITE_SOCKET_URL`: a conexão usa a origem do site.
+3. Revise o serviço `jungle-gaming-frontend` detectado pelo `render.yaml` e aplique o Blueprint. O comando de build é `npm ci && VITE_ENABLE_MOCKS=true npm run build`; o de inicialização é `npm start`.
+4. Confirme que `VITE_ENABLE_MOCKS=true`, `VITE_API_BASE_URL=/api` e `VITE_API_TIMEOUT=15000` estão definidos. Essas variáveis são públicas e não contêm segredos. Não configure `VITE_SOCKET_URL`: a conexão usa a origem do site. Para diagnóstico temporário, defina `VITE_DIAGNOSTICS=true` no ambiente Render e faça redeploy; o console informa o estado do MSW/Service Worker, a validação do catálogo e as conexões Socket.IO.
 5. Inicie o deploy e acompanhe **Events** e **Logs** do serviço. Em **Settings**, o Render mostra o domínio `*.onrender.com`; abra-o e confira `/health` (deve responder `{"status":"ok"}`).
 
 O deploy não foi iniciado por este workspace: o branch local ainda tem commits e alterações sem enviar ao GitHub, e a conta do Render exige a seleção do repositório no painel. Atualize o link de demonstração acima depois de confirmar a URL real.
@@ -76,6 +76,8 @@ O deploy não foi iniciado por este workspace: o branch local ainda tem commits 
 ### Mocks e limites da demonstração
 
 O Blueprint ativa o MSW na build com `VITE_ENABLE_MOCKS=true`; o worker `public/mockServiceWorker.js` intercepta as rotas `/api` antes de montar a aplicação. Os dados de autenticação, perfil, carteiras, favoritos, carrinho e pedidos são simulados no navegador e ficam no armazenamento local, por isso não sincronizam entre dispositivos. Use apenas as contas fictícias da seção de autenticação. Esta demonstração não é um serviço de carteira, autenticação ou compra real.
+
+Se uma requisição `/api/*` não for interceptada, o servidor responde JSON 404, sem mascarar a falha como HTML da SPA. `GET /api/nfts` valida o array e os campos essenciais dos NFTs antes de disponibilizar o resultado à interface.
 
 O servidor Socket.IO aceita conexões no mesmo serviço e entrega `order.updated` apenas à sala da conta informada pelo cliente; `nft.updated` é um evento público. A identificação é simulada e não equivale a autorização de servidor. O servidor de produção oferece transporte e reconexão, mas não há backend real publicando mudanças de pedidos ou NFTs. Não considere a entrega de atualizações em tempo real validada até verificar uma publicação real.
 ## Testes
@@ -119,7 +121,7 @@ O contrato compartilhado em `src/lib/realtime/types.ts` usa `type`, `resourceId`
 
 `order.updated` sinaliza o pedido e sua nova versão/estado dentro de `scopeId`, que identifica a conta proprietária. A tela ignora eventos de outra conta e versões antigas, invalida a consulta privada e mantém a API REST como fonte de recuperação. O cache não aceita regressão de versão nem retorno de um estado terminal para `pending`; recibos continuam usando o snapshot imutável do pedido. Enquanto pendente, o pedido também é consultado periodicamente.
 
-O cliente Socket.IO tenta reconectar continuamente. Ao conectar ou reconectar, as consultas de NFTs, cotações e pedidos são reconciliadas com REST. Logout/expiração encerra o socket e remove seus listeners; a troca de usuário invalida os caches privados, mantendo o carrinho de visitante. O servidor de apoio E2E encaminha os eventos via Socket.IO real e oferece `/__test__/drop-connections` para simular uma queda de transporte. O MSW atualiza o fixture REST e devolve o evento versionado; ele não publica o evento sozinho, então o teste o encaminha ao servidor de apoio. O helper E2E transmite eventos a todos os sockets conectados; consumidores de pedidos validam `scopeId`. Um backend real deve autorizar a sessão e entregar eventos privados somente ao canal da conta proprietária.
+O cliente Socket.IO tenta reconectar continuamente. Ao conectar ou reconectar, as consultas de NFTs, cotações e pedidos são reconciliadas com REST. Logout/expiração limpa o escopo autenticado e reconecta como visitante, preservando os listeners globais de NFTs; o cleanup das subscriptions remove listeners quando as telas saem. A troca de usuário atualiza o escopo e invalida os caches privados, mantendo o carrinho de visitante. O servidor de apoio E2E encaminha os eventos via Socket.IO real e oferece `/__test__/drop-connections` para simular uma queda de transporte. O MSW atualiza o fixture REST e devolve o evento versionado; ele não publica o evento sozinho, então o teste o encaminha ao servidor de apoio. O helper E2E transmite eventos a todos os sockets conectados; consumidores de pedidos validam `scopeId`. Um backend real deve autorizar a sessão e entregar eventos privados somente ao canal da conta proprietária.
 
 O cenário `nft-update` altera a fixture em memória do worker MSW. A alteração é lida pelas chamadas REST enquanto esse worker permanece ativo, mas pode se perder se o navegador reiniciar o worker; isso limita testes de atualização de NFT após refresh, não a reconciliação REST após uma queda/reconexão do socket na mesma página.
 

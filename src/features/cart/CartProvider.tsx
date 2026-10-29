@@ -151,8 +151,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [queryClient, session.isLoading, session.user])
 
   useEffect(() => {
-    if (import.meta.env.MODE === 'test') return
+    if (import.meta.env.MODE === 'test' || session.isLoading) return
     realtimeClient.setScope(session.user?.id ?? null)
+  }, [session.isLoading, session.user?.id])
+
+  useEffect(() => {
+    if (import.meta.env.MODE === 'test' || session.isLoading) return
     const unsubscribe = realtimeClient.onEvent<{ nft: Nft }>('nft.updated', (event: RealtimeUpdateEvent<{ nft: Nft }>) => {
       if (!event || event.type !== 'nft.updated' || typeof event.resourceId !== 'string' || !Number.isSafeInteger(event.version) || event.version < 1 || !event.payload?.nft || event.payload.nft.id !== event.resourceId) return
       const cachedNftVersion = Math.max(
@@ -182,7 +186,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       unsubscribe()
       unsubscribeConnection()
     }
-  }, [ownerKey, queryClient, session.isLoading])
+  }, [queryClient, session.isLoading])
 
   const addItem = useCallback(async (item: CartLineInput) => { await addMutation.mutateAsync(item) }, [addMutation])
   const updateQuantity = useCallback(async (itemId: string, quantity: number) => { try { await quantityMutation.mutateAsync({ itemId, quantity }) } catch { /* Reported through context errorMessage. */ } }, [quantityMutation])

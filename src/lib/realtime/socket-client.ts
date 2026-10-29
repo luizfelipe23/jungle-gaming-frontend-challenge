@@ -6,6 +6,11 @@ export class SocketClient {
   private socket: Socket | null = null
   private subscriptions = new Map<symbol, () => void>()
   private scopeId: string | null = null
+  private scopeIdAtHandshake: string | null = null
+
+  private get diagnosticsEnabled() {
+    return import.meta.env.DEV || import.meta.env.VITE_DIAGNOSTICS === 'true'
+  }
 
   private get url() {
     return import.meta.env.VITE_SOCKET_URL
@@ -17,8 +22,10 @@ export class SocketClient {
     this.scopeId = scopeId
 
     if (this.socket) {
-      this.socket.auth = { scopeId }
-      if (this.socket.connected) this.socket.disconnect().connect()
+      if (this.socket.connected) {
+        this.socket.disconnect()
+        this.socket.connect()
+      }
     }
   }
 
@@ -35,10 +42,24 @@ export class SocketClient {
 
     this.socket = io(url, {
       autoConnect: false,
-      auth: { scopeId: this.scopeId },
+      auth: (callback) => {
+        this.scopeIdAtHandshake = this.scopeId
+        callback({ scopeId: this.scopeIdAtHandshake })
+      },
       reconnection: true,
       reconnectionAttempts: Infinity,
       transports: ['websocket'],
+    })
+
+    this.socket.on('connect', () => {
+      if (this.diagnosticsEnabled) console.info('[diagnostic] Socket.IO conectado.')
+      if (this.scopeIdAtHandshake !== this.scopeId) {
+        this.socket?.disconnect()
+        this.socket?.connect()
+      }
+    })
+    this.socket.on('connect_error', (error: Error) => {
+      if (this.diagnosticsEnabled) console.error(`[diagnostic] Socket.IO falhou ao conectar: ${error.message}`)
     })
 
     return this.socket

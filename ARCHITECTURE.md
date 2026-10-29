@@ -71,7 +71,7 @@ O contrato em `src/lib/realtime/types.ts` define `type`, `resourceId`, `version`
 
 `order.updated` inclui `scopeId` da conta dona do pedido e é filtrado por escopo, ID e versão maior que a última conhecida. A tela invalida a consulta privada e recupera o pedido pela API; pedidos pendentes também são consultados periodicamente. O cache impede regressão de versão e impede que estados terminais voltem para `pending`. O recibo continua baseado no snapshot imutável do pedido.
 
-O cliente usa reconexão automática contínua. Ao conectar ou reconectar, invalida catálogo, detalhes, cotações e consultas de pedidos para recuperar o estado via REST. Listeners são removidos no cleanup das subscriptions e ao desconectar; logout/401 encerra a conexão, e a troca de usuário remove os caches privados. O cache e a chave do carrinho visitante permanecem fora da invalidação privada.
+O cliente usa reconexão automática contínua. Ao conectar ou reconectar, invalida catálogo, detalhes, cotações e consultas de pedidos para recuperar o estado via REST. Os listeners são removidos no cleanup das subscriptions. Logout/401 limpa o escopo autenticado e reconecta como visitante sem destruir listeners; a troca de usuário atualiza o escopo e remove os caches privados. O cache e a chave do carrinho visitante permanecem fora da invalidação privada.
 
 Para validar o fluxo sem backend, o Playwright inicia o servidor Socket.IO de teste em `scripts/mock-realtime-server.mjs` ao lado do Vite por `scripts/e2e-server.mjs`. O MSW altera os dados de cenário; o teste encaminha o evento retornado pelo mock ao servidor Socket.IO real. Os dois processos são encerrados junto com o ciclo do Playwright.
 
@@ -95,7 +95,7 @@ O endpoint de cenário `POST /api/dev/scenarios/nft-update` atualiza a fixture R
 - `features/auth/pages` e `components` apresentam login e cadastro; `validation.ts` concentra validação de campos e retorno seguro apenas para caminhos locais.
 - `mocks/handlers/authHandlers.ts` simula cadastro, conflito de e-mail, login, sessão expirada e logout. Contas de demonstração armazenam hashes PBKDF2, nunca senhas em texto puro.
 - `/checkout`, `/profile`, `/wallets` e `/orders/$orderId/confirmation` validam a sessão em `beforeLoad`; uma sessão inválida redireciona ao login preservando o destino local.
-- Logout/401 invalidam token local, cache privado e conexões realtime; a chave do carrinho visitante `frontend-challenge:cart:guest:v1` é preservada.
+- Logout/401 invalidam token local e cache privado, limpam o escopo autenticado do Socket.IO e reconectam como visitante; a chave do carrinho visitante `frontend-challenge:cart:guest:v1` é preservada.
 - Essa autenticação roda no cliente e é somente para desenvolvimento/testes. MSW e armazenamento local não oferecem proteção de produção.
 
 ## Publicação

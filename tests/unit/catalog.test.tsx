@@ -26,6 +26,16 @@ function renderCatalog(initialUrl = '/') {
 }
 
 describe('Catálogo', () => {
+  it('rejects a non-array success response and shows a recoverable catalog error', async () => {
+    server.use(http.get('/api/nfts', () => HttpResponse.json({ data: nftFixtures })))
+    const { container } = renderCatalog()
+
+    expect(await screen.findAllByRole('button', { name: 'Tentar novamente' })).toHaveLength(2)
+    const errorHeadings = [...container.querySelectorAll('h3')]
+      .filter((heading) => heading.textContent?.includes('Não foi possível carregar os NFTs.'))
+    expect(errorHeadings).toHaveLength(2)
+  })
+
   it('carrega os NFTs do endpoint simulado e exibe os cards', async () => {
     renderCatalog()
 

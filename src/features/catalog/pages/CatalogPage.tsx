@@ -171,7 +171,20 @@ export function CatalogPage() {
         </aside>
         <div className="min-w-0">
           <div className="mb-5 flex items-center justify-between border-b border-[#3F2319] pb-3"><div className="flex gap-5 text-sm"><button onClick={() => updateSearch({ status: undefined })} className="border-b-2 border-[#D28A4C] pb-2 text-[#E89B55]">Todos os NFTs</button><button onClick={() => updateSearch({ sort: 'newest' })}>Novos lançamentos</button><button onClick={() => updateSearch({ sort: 'price-desc' })}>Em alta</button></div><label className="text-sm">Ordenar por: <select aria-label="Ordenar por" value={search.sort ?? 'newest'} onChange={(e) => updateSearch({ sort: e.currentTarget.value as CatalogSort })} className="bg-transparent"><option value="newest">Listados recentemente</option><option value="price-asc">Menor preço</option><option value="price-desc">Maior preço</option></select></label></div>
-          {isLoading ? <div className="grid grid-cols-3 gap-5">{Array.from({ length: 9 }, (_, i) => <Skeleton key={i} className="aspect-[.8/1]" />)}</div> : <div className="grid grid-cols-3 gap-x-5 gap-y-9">{visibleNfts.slice(0, 9).map((nft) => <Link key={nft.id} to="/nft/$nftId" params={{ nftId: nft.id }} className="group block"><div className="bg-[#241612] p-2"><img src={nft.imageUrl} alt={nft.name} className="aspect-square w-full rounded-xl object-cover" /></div><p className="mt-2 truncate text-sm">{nft.name}</p><p className="text-base font-bold text-[#E89B55]">{formatDecimal(nft.price, nft.currency === 'ETH' ? 8 : 2)} {nft.currency}</p></Link>)}</div>}
+          {isError ? (
+            <Card role="alert" className="flex min-h-64 flex-col items-center justify-center gap-4 border-[#55321F] p-6 text-center">
+              <AlertTriangle aria-hidden="true" className="h-8 w-8 text-[#E89B55]" />
+              <div>
+                <h3 className="text-lg font-bold text-[#F5F1EB]">Não foi possível carregar os NFTs.</h3>
+                <p className="mt-2 text-xs leading-5 text-[#CFB28C]">Confira sua conexão e tente novamente.</p>
+              </div>
+              <Button type="button" variant="outline" onClick={() => void refetch()}>Tentar novamente</Button>
+            </Card>
+          ) : isLoading ? (
+            <div className="grid grid-cols-3 gap-5">{Array.from({ length: 9 }, (_, i) => <Skeleton key={i} className="aspect-[.8/1]" />)}</div>
+          ) : (
+            <div className="grid grid-cols-3 gap-x-5 gap-y-9">{visibleNfts.slice(0, 9).map((nft) => <Link key={nft.id} to="/nft/$nftId" params={{ nftId: nft.id }} className="group block"><div className="bg-[#241612] p-2"><img src={nft.imageUrl} alt={nft.name} className="aspect-square w-full rounded-xl object-cover" /></div><p className="mt-2 truncate text-sm">{nft.name}</p><p className="text-base font-bold text-[#E89B55]">{formatDecimal(nft.price, nft.currency === 'ETH' ? 8 : 2)} {nft.currency}</p></Link>)}</div>
+          )}
           <div className="mt-8 flex justify-end gap-2">{Array.from({ length: Math.max(1, Math.ceil(visibleNfts.length / 9)) }, (_, i) => <button key={i} onClick={() => updateSearch({ page: i + 1 })} className="h-8 min-w-8 border border-[#55321F] px-2 text-xs">{i + 1}</button>)}</div>
         </div>
       </section>

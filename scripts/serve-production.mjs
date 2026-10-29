@@ -1,6 +1,6 @@
 import { createReadStream, existsSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
-import { extname, join, normalize } from 'node:path'
+import { basename, extname, join, normalize, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createRealtimeServer } from './realtime-server.mjs'
@@ -23,9 +23,13 @@ const contentTypes = {
 }
 
 function sendFile(response, filePath) {
+  const fileName = basename(filePath)
+  const isHashedAsset = filePath.includes(`${sep}assets${sep}`) && /-[A-Za-z0-9_-]{8,}\./.test(fileName)
   response.writeHead(200, {
     'Content-Type': contentTypes[extname(filePath)] ?? 'application/octet-stream',
-    'Cache-Control': filePath.endsWith('.html') ? 'no-cache' : 'public, max-age=31536000, immutable',
+    'Cache-Control': fileName === 'index.html' || fileName === 'mockServiceWorker.js'
+      ? 'no-cache'
+      : isHashedAsset ? 'public, max-age=31536000, immutable' : 'public, max-age=3600',
   })
   createReadStream(filePath).pipe(response)
 }
@@ -34,6 +38,12 @@ const httpServer = createServer((request, response) => {
   const requestUrl = new URL(request.url ?? '/', 'http://localhost')
   if (requestUrl.pathname === '/health') {
     response.writeHead(200, { 'Content-Type': 'application/json' }).end('{"status":"ok"}')
+    return
+  }
+
+  if (requestUrl.pathname === '/api' || requestUrl.pathname.startsWith('/api/')) {
+    response.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' })
+      .end(JSON.stringify({ code: 'API_ROUTE_NOT_FOUND', message: 'Rota de API não encontrada. Verifique se o MSW está ativo.' }))
     return
   }
 

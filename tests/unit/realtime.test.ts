@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { io } from 'socket.io-client'
 
 import { keepNewestNft, keepNewestNftList } from '../../src/lib/realtime/nft-version'
 import { http } from '../../src/lib/api/http'
@@ -31,7 +32,11 @@ const baseNft: Nft = {
 }
 
 describe('Realtime event reconciliation', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    fakeSocket.connected = false
+    fakeSocket.active = false
+  })
 
   it('keeps the newest NFT when REST returns an older version', () => {
     const current = { ...baseNft, price: '2.5', version: 3 }
@@ -58,6 +63,37 @@ describe('Realtime event reconciliation', () => {
     expect(first.data.event).toMatchObject({ resourceId: 'nft-001', payload: { nft: { price: '2.25' } } })
     expect(second.data.event.version).toBeGreaterThan(first.data.event.version)
     expect(second.data.event.payload.nft).toMatchObject({ price: '2.5', version: second.data.event.version })
+  })
+
+  it('updates the account scope without interrupting a connection handshake in progress', () => {
+    fakeSocket.active = true
+    const client = new SocketClient()
+    client.onEvent('order.updated', vi.fn())
+
+    client.setScope('account-42')
+
+    expect(fakeSocket.disconnect).not.toHaveBeenCalled()
+    const auth = vi.mocked(io).mock.calls.at(-1)?.[1]?.auth
+    expect(auth).toBeTypeOf('function')
+    if (typeof auth === 'function') {
+      auth((data) => expect(data).toEqual({ scopeId: 'account-42' }))
+    }
+    client.disconnect()
+  })
+
+  it('reconnects when an established socket changes account scope', () => {
+    fakeSocket.connected = true
+    fakeSocket.active = true
+    const client = new SocketClient()
+    const handler = vi.fn()
+    client.onEvent('order.updated', handler)
+
+    client.setScope('account-99')
+
+    expect(fakeSocket.disconnect).toHaveBeenCalledOnce()
+    expect(fakeSocket.connect).toHaveBeenCalledOnce()
+    expect(fakeSocket.on).toHaveBeenCalledWith('order.updated', handler)
+    client.disconnect()
   })
 
   it('removes event and reconnect listeners when the session socket is disconnected', () => {

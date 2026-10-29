@@ -22,7 +22,7 @@ export function clearPrivateSession(queryClient: ReturnType<typeof useQueryClien
   queryClient.setQueryData(sessionQueryKey, null)
   void queryClient.cancelQueries({ predicate: (query) => isPreviousUserData(query.queryKey) })
   queryClient.removeQueries({ predicate: (query) => isPreviousUserData(query.queryKey) })
-  realtimeClient.disconnect()
+  realtimeClient.setScope(null)
 }
 
 export function clearPrivateUserData(queryClient: ReturnType<typeof useQueryClient>) {
@@ -42,7 +42,7 @@ export function sessionQueryOptions(queryClient: ReturnType<typeof useQueryClien
           clearSessionToken()
           void queryClient.cancelQueries({ predicate: (query) => isPreviousUserData(query.queryKey) })
           queryClient.removeQueries({ predicate: (query) => isPreviousUserData(query.queryKey) })
-          realtimeClient.disconnect()
+          realtimeClient.setScope(null)
           return null
         }
         throw error
